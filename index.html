@@ -221,9 +221,9 @@
   </div>
 </div>
 <div class="grid money-stats">
-  <div class="card stat"><span>Total Money In</span><b id="xin">₹0</b></div>
-  <div class="card stat"><span>Total Money Out</span><b id="xout">₹0</b></div>
-  <div class="card stat"><span>Current Balance</span><b id="xbal">₹0</b></div>
+  <div class="card stat"><span>Total Money Received</span><b id="xin">₹0</b></div>
+  <div class="card stat"><span>Total Money Spent</span><b id="xout">₹0</b></div>
+  <div class="card stat"><span>Money Left</span><b id="xbal">₹0</b></div>
 </div>
 <div class="card">
   <div class="sectionhead"><h2>Transaction Records</h2><span id="xcount" class="badge">0</span></div>
@@ -245,10 +245,10 @@ async function getUser(){const {data}=await supabaseClient.auth.getUser();USER=d
 async function authLogin(){let email=$('authEmail').value.trim(),password=$('authPass').value;if(!email||!password){msg('Enter your email and password.');return}msg('Signing in...',true);try{let r=await Promise.race([supabaseClient.auth.signInWithPassword({email,password}),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out. Please refresh and try again.')),15000))]);if(r.error){msg(r.error.message);return}msg('Login successful. Loading your data…',true);await startApp()}catch(e){console.error('LOGIN ERROR',e);msg(e.message||'Could not sign in. Please try again.')}}
 async function authSignup(){let email=$('authEmail').value.trim(),password=$('authPass').value;if(!email||!password){msg('Enter an email and password.');return}if(password.length<6){msg('Password must be at least 6 characters.');return}msg('Creating account...',true);try{let r=await Promise.race([supabaseClient.auth.signUp({email,password}),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out. Please refresh and try again.')),15000))]);if(r.error){msg(r.error.message);return}if(r.data.session){msg('Account created. Signing you in...',true);await startApp()}else msg('Account created. Check your email to confirm it, then sign in.',true)}catch(e){console.error('SIGNUP ERROR',e);msg(e.message||'Could not create account. Please try again.')}}
 $('loginBtn').onclick=authLogin;$('signupBtn').onclick=authSignup;$('authPass').addEventListener('keydown',e=>{if(e.key==='Enter')authLogin()});$('logout').onclick=async()=>{await supabaseClient.auth.signOut()};
-function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.p===p));const h=document.querySelector(`[data-p="${p}"]`);if(h&&$('heading'))$('heading').textContent=h.textContent}const navEl=$('nav');if(navEl)navEl.onclick=e=>{if(e.target.dataset.p)go(e.target.dataset.p)};document.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>go(x.dataset.go));const quickEl=$('quick');if(quickEl)quickEl.onclick=()=>{go('tasks');const tn=$('tn');if(tn)tn.focus()};
+function go(p){document.querySelectorAll('.page').forEach(x=>{if(x&&x.classList)x.classList.toggle('active',x.id===p)});document.querySelectorAll('#nav button').forEach(x=>{if(x&&x.classList)x.classList.toggle('active',x.dataset.p===p)});const h=document.querySelector(`[data-p="${p}"]`);if(h&&$('heading'))$('heading').textContent=h.textContent}const navEl=$('nav');if(navEl)navEl.onclick=e=>{if(e.target.dataset.p)go(e.target.dataset.p)};document.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>go(x.dataset.go));const quickEl=$('quick');if(quickEl)quickEl.onclick=()=>{go('tasks');const tn=$('tn');if(tn)tn.focus()};
 const mobileMenu=$('mobileMenu'),sideBar=$('sideBar'),closeMenu=$('closeMenu'),mobileOverlay=$('mobileOverlay');
 function closeMobileMenu(){if(sideBar)sideBar.classList.remove('open');if(mobileOverlay)mobileOverlay.classList.remove('show')}
-if(mobileMenu)mobileMenu.onclick=()=>{sideBar.classList.add('open');mobileOverlay.classList.add('show')};
+if(mobileMenu)mobileMenu.onclick=()=>{if(sideBar)sideBar.classList.add('open');if(mobileOverlay)mobileOverlay.classList.add('show')};
 if(closeMenu)closeMenu.onclick=closeMobileMenu;
 if(mobileOverlay)mobileOverlay.onclick=closeMobileMenu;
 if(navEl)navEl.addEventListener('click',e=>{if(e.target.dataset.p)closeMobileMenu()});
@@ -310,7 +310,7 @@ document.querySelectorAll('[data-rc]').forEach(x=>x.onchange=()=>updateRow('task
 document.querySelectorAll('.completed-delete').forEach(x=>x.onclick=()=>deleteRow('tasks',x.dataset.cid));
 }
 $('at').onclick=async()=>{let n=$('tn').value.trim();if(!n)return;await addRow('tasks',{title:n,task_type:$('tt').value,task_date:$('td').value,note:$('tnote').value.trim(),completed:false});$('tn').value='';$('tnote').value=''};
-$('tabs').onclick=e=>{if(!e.target.dataset.f)return;F=e.target.dataset.f;document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.toggle('active',x===e.target));renderT()};
+$('tabs').onclick=e=>{if(!e.target||!e.target.dataset.f)return;F=e.target.dataset.f;document.querySelectorAll('#tabs .tab').forEach(x=>{if(x&&x.classList)x.classList.toggle('active',x===e.target)});renderT()};
 function renderE(){
 let a=[...D.events].sort((x,y)=>(String(x.event_date||'')+String(x.event_time||'')).localeCompare(String(y.event_date||'')+String(y.event_time||'')));
 let upcoming=a.filter(e=>!e.completed&&e.event_date>=now());
@@ -350,8 +350,6 @@ $('xin').textContent=money(income);
 $('xout').textContent=money(outflow);
 let balance=income-outflow;
   $('xbal').textContent=money(balance);
-  if($('balanceCard'))$('balanceCard').classList.toggle('negative',balance<0);
-  if($('balanceCard'))$('balanceCard').classList.toggle('positive',balance>=0);
 $('xcount').textContent=D.expenses.length;
 let a=[...D.expenses].sort((x,y)=>String(y.expense_date||'').localeCompare(String(x.expense_date||'')));
 $('xl').innerHTML=a.length?a.map(x=>{

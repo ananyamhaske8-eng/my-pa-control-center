@@ -293,7 +293,97 @@
 .search-empty{padding:16px;color:#7b8290;text-align:center;font-size:13px}
 @media(max-width:800px){.top{flex-wrap:wrap}.search-wrap{order:3;flex-basis:100%;max-width:none}.top>div:last-child{flex-wrap:wrap}}
 @media(max-width:600px){.search-results{position:fixed;left:10px;right:10px;top:112px;max-height:55vh}.search-wrap{min-width:0}.top>div:last-child{width:100%}#quick,#logout{flex:0 0 auto}}
-</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex:1">
+
+.day-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid #eee}
+.day-row:last-child{border-bottom:0}
+.day-row small{display:block;color:#777;margin-top:4px;font-size:12px}
+.badge{font-size:11px;padding:5px 8px;border-radius:999px;background:#f0eee8;white-space:nowrap}
+.money-line{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}
+.money-line:last-child{border-bottom:0}
+.progress-wrap{display:flex;align-items:center;gap:12px}
+.progress-bar{height:12px;background:#eee;border-radius:99px;overflow:hidden;flex:1}
+.progress-bar i{display:block;height:100%;background:#24231f;border-radius:99px}
+.muted{color:#777;font-size:13px}
+.empty{color:#888;padding:12px 0}
+
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+function myDayDateKey(){
+  const d=new Date();
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function myDayDateLabel(){
+  return new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+function escMD(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function renderMyDay(){
+  if(!USER) return;
+  const today=myDayDateKey(), now=new Date();
+  const tasks=D.tasks||[], events=D.events||[], reminders=D.reminders||[], expenses=D.expenses||[];
+  const todayTasks=tasks.filter(t=>t.date===today);
+  const activeToday=todayTasks.filter(t=>!t.completed);
+  const completedToday=todayTasks.filter(t=>t.completed);
+  const todayEvents=events.filter(e=>e.date===today);
+  const todayReminders=reminders.filter(r=>r.date===today);
+  const overdueTasks=tasks.filter(t=>!t.completed && t.date && t.date<today);
+  const overdueReminders=reminders.filter(r=>!r.completed && r.date && r.date<today);
+  const overdue=[...overdueTasks.map(t=>({kind:'Task',title:t.title,date:t.date})),...overdueReminders.map(r=>({kind:'Reminder',title:r.title,date:r.date}))];
+  const todayMoney=expenses.filter(e=>e.date===today);
+  const moneyIn=todayMoney.filter(e=>e.transaction_type==='Money In').reduce((s,e)=>s+Number(e.amount||0),0);
+  const moneyOut=todayMoney.filter(e=>e.transaction_type!=='Money In').reduce((s,e)=>s+Number(e.amount||0),0);
+  const total=todayTasks.length;
+  const done=completedToday.length;
+  const pct=total?Math.round(done/total*100):0;
+
+  const el=id=>document.getElementById(id);
+  if(el('myday-date')) el('myday-date').textContent=myDayDateLabel();
+  if(el('myday-stats')) el('myday-stats').innerHTML=`
+    <div class="stat-card"><b>${activeToday.length}</b><span>Tasks Left</span></div>
+    <div class="stat-card"><b>${todayEvents.length}</b><span>Events</span></div>
+    <div class="stat-card"><b>${todayReminders.length}</b><span>Reminders</span></div>
+    <div class="stat-card"><b>${overdue.length}</b><span>Overdue</span></div>`;
+
+  const priorityRank={High:0,Medium:1,Low:2};
+  const sorted=activeToday.slice().sort((a,b)=>(priorityRank[a.priority]??1)-(priorityRank[b.priority]??1));
+  el('myday-task-count').textContent=`${activeToday.length} left`;
+  el('myday-tasks').innerHTML=sorted.length?sorted.map(t=>`
+    <div class="day-row">
+      <div><b>${escMD(t.title)}</b><small>${escMD(t.category||'Home')} · ${escMD(t.type||'One-time')}</small></div>
+      <span class="badge">${escMD(t.priority||'Medium')}</span>
+    </div>`).join(''):'<div class="empty">🎉 No active tasks for today.</div>';
+
+  el('myday-event-count').textContent=`${todayEvents.length}`;
+  el('myday-events').innerHTML=todayEvents.length?todayEvents.sort((a,b)=>String(a.time||'').localeCompare(String(b.time||''))).map(e=>`
+    <div class="day-row">
+      <div><b>${escMD(e.title)}</b><small>${escMD(e.time||'No time')} · ${escMD(e.type||'Event')}</small></div>
+      ${e.completed?'<span class="badge">Done</span>':''}
+    </div>`).join(''):'<div class="empty">No events today.</div>';
+
+  el('myday-reminder-count').textContent=`${todayReminders.length}`;
+  el('myday-reminders').innerHTML=todayReminders.length?todayReminders.map(r=>`
+    <div class="day-row">
+      <div><b>${escMD(r.title)}</b><small>${escMD(r.category||'General')} · ${escMD(r.repeat||'Once')}</small></div>
+      ${r.completed?'<span class="badge">Done</span>':''}
+    </div>`).join(''):'<div class="empty">No reminders today.</div>';
+
+  el('myday-overdue-count').textContent=`${overdue.length}`;
+  el('myday-overdue').innerHTML=overdue.length?overdue.sort((a,b)=>a.date.localeCompare(b.date)).map(x=>`
+    <div class="day-row">
+      <div><b>${escMD(x.title)}</b><small>${escMD(x.kind)} · Due ${escMD(x.date)}</small></div>
+      <span class="badge">Overdue</span>
+    </div>`).join(''):'<div class="empty">✨ Nothing overdue.</div>';
+
+  el('myday-money').innerHTML=`
+    <div class="money-line"><span>Received</span><b>₹${moneyIn.toLocaleString('en-IN')}</b></div>
+    <div class="money-line"><span>Spent</span><b>₹${moneyOut.toLocaleString('en-IN')}</b></div>
+    <div class="money-line"><span>Net today</span><b>₹${(moneyIn-moneyOut).toLocaleString('en-IN')}</b></div>`;
+
+  el('myday-progress').innerHTML=`
+    <div class="progress-wrap"><div class="progress-bar"><i style="width:${pct}%"></i></div><strong>${pct}%</strong></div>
+    <p class="muted">${done} of ${total} today's tasks completed.</p>`;
+}
+
+</script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex:1">
 <div class="search-wrap">
 <input id="globalSearch" type="search" placeholder="🔎 Search tasks, reminders, events, money, staff…" autocomplete="off">
 <div id="searchResults" class="search-results"></div>
@@ -355,6 +445,56 @@
     </div>
   </div>
 </section>
+
+<section id="myday" class="page">
+  <div class="page-head">
+    <div>
+      <h1>☀️ My Day</h1>
+      <p id="myday-date">Everything you need to handle today.</p>
+    </div>
+    <div class="quick-actions">
+      <button onclick="show('tasks')">➕ Task</button>
+      <button onclick="show('reminders')">🔔 Reminder</button>
+      <button onclick="show('calendar')">📅 Event</button>
+      <button onclick="show('money')">💰 Money</button>
+    </div>
+  </div>
+
+  <div class="stats-grid" id="myday-stats"></div>
+
+  <div class="dashboard-grid">
+    <div class="card">
+      <div class="card-head"><h3>📋 Today's Tasks</h3><span id="myday-task-count"></span></div>
+      <div id="myday-tasks"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>📅 Today's Events</h3><span id="myday-event-count"></span></div>
+      <div id="myday-events"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>🔔 Today's Reminders</h3><span id="myday-reminder-count"></span></div>
+      <div id="myday-reminders"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>⏰ Overdue</h3><span id="myday-overdue-count"></span></div>
+      <div id="myday-overdue"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>💰 Today's Money</h3></div>
+      <div id="myday-money"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>✅ Today Progress</h3></div>
+      <div id="myday-progress"></div>
+    </div>
+  </div>
+</section>
+
 <section id="tasks" class="page"><div class="card"><h2>Add Task / Mini Task</h2><div class="form"><input id="tn" placeholder="Task e.g. Call electrician"><select id="tt"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>One-time</option></select><input id="td" type="date"><select id="tc"><option>Home</option><option>Office / PA</option><option>MBA</option><option>Finance</option><option>Follow-up</option><option>Personal</option></select><input id="tnote" placeholder="Mini task / note"><select id="tp"><option>Medium</option><option>High</option><option>Low</option></select><button id="at">Add</button></div></div><div class="card"><div class="category-filters" id="categoryFilters">
   <button class="category-filter active" data-c="all">All Categories</button>
   <button class="category-filter" data-c="Home">🏠 Home</button>

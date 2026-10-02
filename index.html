@@ -277,7 +277,28 @@
   .category-filters{gap:6px}
   .category-filter{padding:9px 10px}
 }
-</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
+
+/* Global Search */
+.search-wrap{position:relative;min-width:240px;flex:1;max-width:430px}
+#globalSearch{width:100%;margin:0;padding:10px 14px;border:1px solid #d8dce5;border-radius:10px;background:#fff;font-size:14px;outline:none}
+#globalSearch:focus{border-color:#7b61ff;box-shadow:0 0 0 3px rgba(123,97,255,.10)}
+.search-results{position:absolute;top:calc(100% + 8px);left:0;right:0;background:#fff;border:1px solid #e2e5eb;border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.12);z-index:200;max-height:430px;overflow:auto;display:none}
+.search-results.show{display:block}
+.search-result{display:flex;gap:10px;align-items:flex-start;padding:11px 13px;border-bottom:1px solid #eef0f3;cursor:pointer}
+.search-result:last-child{border-bottom:0}
+.search-result:hover{background:#f7f8fb}
+.search-result .sr-icon{width:30px;height:30px;border-radius:8px;background:#f0efff;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.search-result .sr-title{font-weight:700;font-size:13px;line-height:1.35}
+.search-result .sr-meta{font-size:11px;color:#7b8290;margin-top:3px;line-height:1.35}
+.search-empty{padding:16px;color:#7b8290;text-align:center;font-size:13px}
+@media(max-width:800px){.top{flex-wrap:wrap}.search-wrap{order:3;flex-basis:100%;max-width:none}.top>div:last-child{flex-wrap:wrap}}
+@media(max-width:600px){.search-results{position:fixed;left:10px;right:10px;top:112px;max-height:55vh}.search-wrap{min-width:0}.top>div:last-child{width:100%}#quick,#logout{flex:0 0 auto}}
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex:1">
+<div class="search-wrap">
+<input id="globalSearch" type="search" placeholder="🔎 Search tasks, reminders, events, money, staff…" autocomplete="off">
+<div id="searchResults" class="search-results"></div>
+</div>
+<span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
 <section id="dashboard" class="page active">
   <div class="grid">
     <div class="card stat"><span>Pending Tasks</span><b id="sp">0</b></div>
@@ -404,6 +425,40 @@ const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let USER=null,F='all',D={tasks:[],mini_tasks:[],events:[],reminders:[],expenses:[],people:[],notes:[]};
 const $=x=>document.getElementById(x);const now=()=>{let d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const money=n=>'₹'+Number(n||0).toLocaleString('en-IN');const nice=d=>d?new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'';const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+function searchAll(raw){
+  const q=String(raw||'').trim().toLowerCase();
+  if(!q)return [];
+  const out=[];
+  const add=(type,icon,title,meta,page,id,extra='')=>{if((String(title)+' '+String(meta)+' '+String(extra)).toLowerCase().includes(q))out.push({type,icon,title,meta,page,id});};
+  D.tasks.forEach(t=>add('Task','✓',t.title,`${t.category||'Home'} • ${t.task_type||''} • ${t.priority||'Medium'} Priority${t.task_date?' • '+nice(t.task_date):''}`,'tasks',t.id,t.note));
+  D.reminders.forEach(r=>add('Reminder','🔔',r.title,`${r.category||'General'} • ${nice(r.reminder_date)} • ${r.repeat_type||'Once'}`,'reminders',r.id,r.note));
+  D.events.forEach(e=>add('Event','📅',e.title,`${e.event_type||'Event'} • ${nice(e.event_date)} ${e.event_time||''}`,'calendar',e.id,e.note));
+  D.expenses.forEach(x=>add('Money',x.transaction_type==='Money In'?'＋':'−',x.name,`${x.transaction_type||'Money Out'} • ${money(x.amount)} • ${x.category||'General'} • ${nice(x.expense_date)}`,'expenses',x.id,x.note));
+  D.people.forEach(p=>add('Staff','👤',p.name,`${p.role||'Service contact'}${p.phone?' • '+p.phone:''}${Number(p.monthly_payment||0)?' • '+money(p.monthly_payment)+'/month':''}`,'people',p.id));
+  return out.slice(0,30);
+}
+function renderSearch(raw){
+  const box=$('searchResults'); if(!box)return;
+  const q=String(raw||'').trim();
+  if(!q){box.classList.remove('show');box.innerHTML='';return;}
+  const results=searchAll(q);
+  box.innerHTML=results.length?results.map((r,i)=>`<div class="search-result" data-search-page="${r.page}" data-search-id="${r.id}"><div class="sr-icon">${r.icon}</div><div><div class="sr-title">${esc(r.title)}</div><div class="sr-meta">${esc(r.type)} • ${esc(r.meta)}</div></div></div>`).join(''):'<div class="search-empty">No matching records found.</div>';
+  box.classList.add('show');
+  box.querySelectorAll('.search-result').forEach(el=>el.onclick=()=>{
+    const page=el.dataset.searchPage;go(page);
+    box.classList.remove('show');
+    const input=$('globalSearch');if(input)input.value='';
+    setTimeout(()=>{const target=document.querySelector(`[data-id="${el.dataset.searchId}"]`);if(target&&target.scrollIntoView)target.scrollIntoView({behavior:'smooth',block:'center'});},80);
+  });
+}
+const globalSearch=$('globalSearch');
+if(globalSearch){
+  globalSearch.oninput=()=>renderSearch(globalSearch.value);
+  globalSearch.onfocus=()=>{if(globalSearch.value.trim())renderSearch(globalSearch.value)};
+  globalSearch.onkeydown=e=>{if(e.key==='Escape'){globalSearch.value='';renderSearch('');globalSearch.blur();}if(e.key==='Enter'){const first=$('searchResults')?.querySelector('.search-result');if(first)first.click();}};
+  document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))$('searchResults')?.classList.remove('show')});
+}
+
 $('today').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});['td','ed','rd','xd'].forEach(x=>$(x).value=now());
 function msg(t,good=false){$('authMsg').textContent=t||'';$('authMsg').style.color=good?'#18794e':'#b42318'}
 function status(t){$('syncStatus').textContent=t}

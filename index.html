@@ -120,6 +120,8 @@
   .event{padding:13px 2px}
   .expense{grid-template-columns:1fr 1fr;gap:9px}
   #reminders .form button{width:100%}
+  #calendar .form button{width:100%}
+  .event-actions{flex-wrap:wrap}
   .expense button{grid-column:2;justify-self:end}
   .people{grid-template-columns:1fr}
   #quick{font-size:13px;padding:10px}
@@ -145,6 +147,11 @@
 .completed-title{text-decoration:line-through;color:#8a919e;font-weight:bold}
 .completed-meta{font-size:12px;color:#9aa1ac;margin-top:4px}
 .completed-empty{text-align:center;color:#8a919e;padding:18px}
+
+.event-actions{display:flex;gap:6px;align-items:center;margin-top:7px}
+.event-complete{font-size:12px}
+.event.completed{opacity:.65}
+.event.completed strong{text-decoration:line-through;color:#888}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
 <section id="dashboard" class="page active"><div class="grid"><div class="card stat"><span>Pending Tasks</span><b id="sp">0</b></div><div class="card stat"><span>Today's Tasks</span><b id="st">0</b></div><div class="card stat"><span>Upcoming Events</span><b id="se">0</b></div><div class="card stat"><span>Completed Today</span><b id="sc">0</b></div><div class="card stat"><span>This Month</span><b id="sx">₹0</b></div></div><div class="two"><div class="card"><div class="sectionhead"><h2>Today's Work</h2><button class="secondary" data-go="tasks">All tasks</button></div><div id="dt"></div></div><div class="card"><div class="sectionhead"><h2>Upcoming</h2><button class="secondary" data-go="calendar">Calendar</button></div><div id="de"></div></div></div></section>
 <section id="tasks" class="page"><div class="card"><h2>Add Task / Mini Task</h2><div class="form"><input id="tn" placeholder="Task e.g. Call electrician"><select id="tt"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>One-time</option></select><input id="td" type="date"><input id="tnote" placeholder="Mini task / note"><button id="at">Add</button></div></div><div class="card"><div class="tabs" id="tabs"><button class="tab active" data-f="all">Active</button><button class="tab" data-f="today">Today</button><button class="tab" data-f="Daily">Daily</button><button class="tab" data-f="Weekly">Weekly</button><button class="tab" data-f="Monthly">Monthly</button><button class="tab" data-f="done">Completed</button></div><div id="tl"></div>
@@ -157,7 +164,24 @@
   <div id="completedList"></div>
 </div>
 </section>
-<section id="calendar" class="page"><div class="card"><h2>Add Calendar Event</h2><div class="form"><input id="en" placeholder="Meeting / event / appointment"><select id="et"><option>Meeting</option><option>Event</option><option>Appointment</option><option>Personal</option></select><input id="ed" type="date"><input id="etime" type="time"><button id="ae">Add</button></div></div><div class="card"><h2>Calendar / Events</h2><div id="el"></div></div></section>
+<section id="calendar" class="page">
+<div class="card">
+  <h2>Add Calendar Event</h2>
+  <p class="muted">Meetings, appointments, personal events and important dates.</p>
+  <div class="form">
+    <input id="en" placeholder="Event e.g. Meeting with client">
+    <select id="et"><option>Meeting</option><option>Event</option><option>Appointment</option><option>Personal</option></select>
+    <input id="ed" type="date">
+    <input id="etime" type="time">
+    <input id="enote" placeholder="Details / location">
+    <button id="ae">Add Event</button>
+  </div>
+</div>
+<div class="card">
+  <div class="sectionhead"><h2>Upcoming Calendar</h2><span id="eventCount" class="badge">0</span></div>
+  <div id="el"></div>
+</div>
+</section>
 <section id="reminders" class="page"><div class="card"><h2>Add Future Reminder</h2><p class="muted">Birthdays, anniversaries, bills, renewals, follow-ups, calls, and anything you don't want to forget.</p><div class="form"><input id="rn" placeholder="Reminder e.g. Electricity bill"><select id="rc"><option>General</option><option>Birthday</option><option>Anniversary</option><option>Bill</option><option>Renewal</option><option>Follow-up</option><option>Call</option></select><select id="rr"><option>Once</option><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select><input id="rd" type="date"><input id="rnote" placeholder="Note / details"><button id="ar">Add Reminder</button></div></div><div class="card"><div class="sectionhead"><h2>My Reminders</h2><span id="remCount" class="badge">0</span></div><div id="rl"></div></div></section>
 <section id="expenses" class="page"><div class="card"><h2>Household Expenses</h2><div class="form"><input id="xn" placeholder="Driver / Tailor / Electrician / Grocery"><input id="xc" placeholder="Category"><input id="xa" type="number" min="0" placeholder="Amount ₹"><input id="xd" type="date"><button id="ax">Add</button></div></div><div class="card"><div class="sectionhead"><h2>Expense Records</h2><b id="xt">₹0</b></div><div id="xl"></div></div></section>
 <section id="people" class="page"><div class="card"><h2>Staff & Service Contacts</h2><div class="form"><input id="pn" placeholder="Name"><input id="pr" placeholder="Role / service"><input id="pp" placeholder="Phone"><input id="pay" type="number" placeholder="Monthly payment ₹"><button id="ap">Add</button></div></div><div class="card"><div class="people" id="pl"></div></div></section></main></div>
@@ -241,8 +265,23 @@ document.querySelectorAll('.completed-delete').forEach(x=>x.onclick=()=>deleteRo
 }
 $('at').onclick=async()=>{let n=$('tn').value.trim();if(!n)return;await addRow('tasks',{title:n,task_type:$('tt').value,task_date:$('td').value,note:$('tnote').value.trim(),completed:false});$('tn').value='';$('tnote').value=''};
 $('tabs').onclick=e=>{if(!e.target.dataset.f)return;F=e.target.dataset.f;document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.toggle('active',x===e.target));renderT()};
-function renderE(){let a=[...D.events].sort((a,b)=>(a.event_date+a.event_time).localeCompare(b.event_date+b.event_time));$('el').innerHTML=a.length?a.map(e=>`<div class="event"><strong>${esc(e.title)}</strong><div class="meta"><span class="badge">${esc(e.event_type)}</span> ${nice(e.event_date)} ${e.event_time||''} <button class="icon dele" data-id="${e.id}">Delete</button></div></div>`).join(''):'<div class="empty">No events added.</div>';document.querySelectorAll('.dele').forEach(x=>x.onclick=()=>deleteRow('calendar_events',x.dataset.id))}
-$('ae').onclick=async()=>{let n=$('en').value.trim();if(!n)return;await addRow('calendar_events',{title:n,event_type:$('et').value,event_date:$('ed').value,event_time:$('etime').value||null});$('en').value='';$('etime').value=''};
+function renderE(){
+let a=[...D.events].sort((x,y)=>(String(x.event_date||'')+String(x.event_time||'')).localeCompare(String(y.event_date||'')+String(y.event_time||'')));
+let upcoming=a.filter(e=>!e.completed&&e.event_date>=now());
+$('eventCount').textContent=upcoming.length;
+$('el').innerHTML=a.length?a.map(e=>`<div class="event ${e.completed?'completed':''}">
+  <strong>${esc(e.title)}</strong>
+  <div class="meta"><span class="badge">${esc(e.event_type)}</span> ${nice(e.event_date)} ${e.event_time||''}</div>
+  ${e.note?`<div class="meta">${esc(e.note)}</div>`:''}
+  <div class="event-actions">
+    <label class="event-complete"><input class="event-check" type="checkbox" ${e.completed?'checked':''} data-eid="${e.id}"> Completed</label>
+    <button class="icon dele" data-id="${e.id}">Delete</button>
+  </div>
+</div>`).join(''):'<div class="empty">No events added yet. Add your first event above 📅</div>';
+document.querySelectorAll('.dele').forEach(x=>x.onclick=()=>deleteRow('calendar_events',x.dataset.id));
+document.querySelectorAll('.event-check').forEach(x=>x.onchange=()=>updateRow('calendar_events',x.dataset.eid,{completed:x.checked}))
+}
+$('ae').onclick=async()=>{let n=$('en').value.trim();if(!n)return;await addRow('calendar_events',{title:n,event_type:$('et').value,event_date:$('ed').value,event_time:$('etime').value||null,note:$('enote').value.trim(),completed:false});$('en').value='';$('etime').value='';$('enote').value='';$('et').value='Meeting';$('ed').value=now()};
 function renderR(){
 let a=[...D.reminders].sort((x,y)=>String(x.reminder_date||'').localeCompare(String(y.reminder_date||'')));
 $('remCount').textContent=a.filter(r=>!r.completed).length;
@@ -265,14 +304,14 @@ $('ap').onclick=async()=>{let n=$('pn').value.trim();if(!n)return;await addRow('
 function dash(){
 let p=D.tasks.filter(t=>!t.completed).length,
 t=D.tasks.filter(t=>!t.completed&&t.task_date===now()).length,
-e=D.events.filter(x=>x.event_date>=now()).length,
+e=D.events.filter(x=>!x.completed&&x.event_date>=now()).length,
 c=D.tasks.filter(t=>t.completed&&t.task_date===now()).length,
 x=D.expenses.filter(x=>x.expense_date.slice(0,7)===now().slice(0,7)).reduce((s,a)=>s+Number(a.amount),0);
 $('sp').textContent=p;$('st').textContent=t;$('se').textContent=e;$('sc').textContent=c;$('sx').textContent=money(x);
 let a=D.tasks.filter(t=>!t.completed&&t.task_date===now()).slice(0,6);
 $('dt').innerHTML=a.length?a.map(t=>`<div class="task"><input class="check dashc" type="checkbox" data-id="${t.id}"><div class="grow"><div class="title">${esc(t.title)}</div><div class="meta">${esc(t.task_type)}</div></div></div>`).join(''):'<div class="empty">No tasks today 🎉</div>';
 document.querySelectorAll('.dashc').forEach(b=>b.onchange=()=>updateRow('tasks',b.dataset.id,{completed:true}));
-let ev=D.events.filter(x=>x.event_date>=now()).sort((a,b)=>(a.event_date+a.event_time).localeCompare(b.event_date+b.event_time)).slice(0,5);
+let ev=D.events.filter(x=>!x.completed&&x.event_date>=now()).sort((a,b)=>(a.event_date+a.event_time).localeCompare(b.event_date+b.event_time)).slice(0,5);
 $('de').innerHTML=ev.length?ev.map(e=>`<div class="event"><strong>${esc(e.title)}</strong><div class="meta">${nice(e.event_date)} ${e.event_time||''} • ${esc(e.event_type)}</div></div>`).join(''):'<div class="empty">No upcoming events.</div>'
 }
 function render(){renderT();renderE();renderR();renderX();renderP();dash()}

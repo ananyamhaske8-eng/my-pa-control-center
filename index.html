@@ -166,6 +166,15 @@
 .in-money{font-weight:bold}
 .out-money{font-weight:bold}
 .transaction-note{font-size:12px;color:#8a919e;margin-top:3px}
+
+.money-stats .money-stat{position:relative;overflow:hidden}
+.money-stats .money-stat .stat-label{font-size:13px;color:#737b88}
+.money-stats .money-stat b{font-size:28px}
+.money-stats .money-left{border:2px solid #d8eadf}
+.money-stats .money-left b{font-size:32px}
+.money-left.negative{border-color:#f1d1d1}
+.money-left.negative b{color:#b42318}
+.money-left.positive b{color:#18794e}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
 <section id="dashboard" class="page active"><div class="grid"><div class="card stat"><span>Pending Tasks</span><b id="sp">0</b></div><div class="card stat"><span>Today's Tasks</span><b id="st">0</b></div><div class="card stat"><span>Upcoming Events</span><b id="se">0</b></div><div class="card stat"><span>Completed Today</span><b id="sc">0</b></div><div class="card stat"><span>This Month</span><b id="sx">₹0</b></div></div><div class="two"><div class="card"><div class="sectionhead"><h2>Today's Work</h2><button class="secondary" data-go="tasks">All tasks</button></div><div id="dt"></div></div><div class="card"><div class="sectionhead"><h2>Upcoming</h2><button class="secondary" data-go="calendar">Calendar</button></div><div id="de"></div></div></div></section>
 <section id="tasks" class="page"><div class="card"><h2>Add Task / Mini Task</h2><div class="form"><input id="tn" placeholder="Task e.g. Call electrician"><select id="tt"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>One-time</option></select><input id="td" type="date"><input id="tnote" placeholder="Mini task / note"><button id="at">Add</button></div></div><div class="card"><div class="tabs" id="tabs"><button class="tab active" data-f="all">Active</button><button class="tab" data-f="today">Today</button><button class="tab" data-f="Daily">Daily</button><button class="tab" data-f="Weekly">Weekly</button><button class="tab" data-f="Monthly">Monthly</button><button class="tab" data-f="done">Completed</button></div><div id="tl"></div>
@@ -339,7 +348,10 @@ let income=D.expenses.filter(x=>(x.transaction_type||'Money Out')==='Money In').
 let outflow=D.expenses.filter(x=>(x.transaction_type||'Money Out')==='Money Out').reduce((s,x)=>s+Number(x.amount||0),0);
 $('xin').textContent=money(income);
 $('xout').textContent=money(outflow);
-$('xbal').textContent=money(income-outflow);
+let balance=income-outflow;
+  $('xbal').textContent=money(balance);
+  $('balanceCard').classList.toggle('negative',balance<0);
+  $('balanceCard').classList.toggle('positive',balance>=0);
 $('xcount').textContent=D.expenses.length;
 let a=[...D.expenses].sort((x,y)=>String(y.expense_date||'').localeCompare(String(x.expense_date||'')));
 $('xl').innerHTML=a.length?a.map(x=>{

@@ -107,7 +107,7 @@
     width:100%;
     margin-top:2px
   }
-  .task > .actions .icon{flex:0 0 auto}
+  .task > .actions .icon{flex:0 0 auto}.mini-box{width:100%;margin-top:9px}.mini-row span{min-width:0;overflow-wrap:anywhere}
   .title{
     font-size:16px;
     line-height:1.35;
@@ -129,6 +129,14 @@
   .top h1{font-size:20px}
   .tabs .tab{flex:1 1 calc(50% - 7px)}
 }
+
+.mini-box{margin-top:10px;background:#f7f8fa;border:1px solid #e4e7ec;border-radius:10px;padding:9px 10px}
+.mini-head{display:flex;justify-content:space-between;font-size:12px;font-weight:bold;color:#555;margin-bottom:5px}
+.mini-row{display:flex;align-items:center;gap:7px;padding:6px 0;border-top:1px solid #e9ebef;font-size:13px}
+.mini-row:first-of-type{border-top:0}
+.mini-check{width:17px;height:17px;flex:0 0 auto}
+.mini-done{text-decoration:line-through;color:#999}
+.mini-delete{margin-left:auto;background:transparent;border:0;color:#999;padding:2px 6px;font-size:17px;line-height:1}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
 <section id="dashboard" class="page active"><div class="grid"><div class="card stat"><span>Pending Tasks</span><b id="sp">0</b></div><div class="card stat"><span>Today's Tasks</span><b id="st">0</b></div><div class="card stat"><span>Upcoming Events</span><b id="se">0</b></div><div class="card stat"><span>This Month</span><b id="sx">₹0</b></div></div><div class="two"><div class="card"><div class="sectionhead"><h2>Today's Work</h2><button class="secondary" data-go="tasks">All tasks</button></div><div id="dt"></div></div><div class="card"><div class="sectionhead"><h2>Upcoming</h2><button class="secondary" data-go="calendar">Calendar</button></div><div id="de"></div></div></div></section>
 <section id="tasks" class="page"><div class="card"><h2>Add Task / Mini Task</h2><div class="form"><input id="tn" placeholder="Task e.g. Call electrician"><select id="tt"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>One-time</option></select><input id="td" type="date"><input id="tnote" placeholder="Mini task / note"><button id="at">Add</button></div></div><div class="card"><div class="tabs" id="tabs"><button class="tab active" data-f="all">Active</button><button class="tab" data-f="today">Today</button><button class="tab" data-f="Daily">Daily</button><button class="tab" data-f="Weekly">Weekly</button><button class="tab" data-f="Monthly">Monthly</button><button class="tab" data-f="done">Completed</button></div><div id="tl"></div></div></section>
@@ -165,8 +173,41 @@ async function updateRow(table,id,patch){const {error}=await supabaseClient.from
 async function deleteRow(table,id){if(!confirm('Delete this item?'))return;const {error}=await supabaseClient.from(table).delete().eq('id',id).eq('user_id',USER.id);if(error){alert(error.message);return}await loadAll()}
 function miniFor(taskId){return D.mini_tasks.filter(m=>m.task_id===taskId)}
 function tasks(){return D.tasks.filter(t=>F==='done'?t.completed:!t.completed&&(F==='all'||F==='today'&&t.task_date===now()||['Daily','Weekly','Monthly'].includes(F)&&t.task_type===F)).sort((a,b)=>(a.task_date||'9999').localeCompare(b.task_date||'9999'))}
-function renderT(){let a=tasks();$('tl').innerHTML=a.length?a.map(t=>{let ms=miniFor(t.id);return `<div class="task ${t.completed?'done':''}"><input class="check" type="checkbox" ${t.completed?'checked':''} data-t="${t.id}"><div class="grow"><div class="title">${esc(t.title)}</div><div class="meta">${esc(t.task_type)} • ${nice(t.task_date)}${t.note?' • '+esc(t.note):''}</div>${ms.length?`<div style="margin-top:8px;padding-left:4px">${ms.map(m=>`<label style="display:block;font-size:12px;color:#666;margin:4px 0"><input type="checkbox" ${m.completed?'checked':''} data-m="${m.id}"> ${esc(m.title)}</label>`).join('')}</div>`:''}</div><div class="actions"><button class="icon addmini" data-id="${t.id}">+ Mini</button><button class="icon delt" data-id="${t.id}">Delete</button></div></div>`}).join(''):'<div class="empty">No tasks here ✨</div>';
-document.querySelectorAll('[data-t]').forEach(x=>x.onchange=()=>updateRow('tasks',x.dataset.t,{completed:x.checked}));document.querySelectorAll('[data-m]').forEach(x=>x.onchange=()=>updateRow('mini_tasks',x.dataset.m,{completed:x.checked}));document.querySelectorAll('.addmini').forEach(x=>x.onclick=async()=>{let title=prompt('Mini task:');if(title&&title.trim())await addRow('mini_tasks',{task_id:x.dataset.id,title:title.trim(),completed:false})});document.querySelectorAll('.delt').forEach(x=>x.onclick=()=>deleteRow('tasks',x.dataset.id))}
+function renderT(){
+let a=tasks();
+$('tl').innerHTML=a.length?a.map(t=>{
+  let ms=miniFor(t.id);
+  let doneCount=ms.filter(m=>m.completed).length;
+  return `<div class="task ${t.completed?'done':''}">
+    <input class="check" type="checkbox" ${t.completed?'checked':''} data-t="${t.id}">
+    <div class="grow">
+      <div class="title">${esc(t.title)}</div>
+      <div class="meta">${esc(t.task_type)} • ${nice(t.task_date)}${t.note?' • '+esc(t.note):''}</div>
+      ${ms.length?`<div class="mini-box">
+        <div class="mini-head"><span>Mini Tasks</span><span>${doneCount}/${ms.length}</span></div>
+        ${ms.map(m=>`<div class="mini-row">
+          <input class="mini-check" type="checkbox" ${m.completed?'checked':''} data-m="${m.id}">
+          <span class="${m.completed?'mini-done':''}">${esc(m.title)}</span>
+          <button class="mini-delete" data-mid="${m.id}" title="Delete mini task">×</button>
+        </div>`).join('')}
+      </div>`:''}
+    </div>
+    <div class="actions">
+      <button class="icon addmini" data-id="${t.id}">+ Mini Task</button>
+      <button class="icon delt" data-id="${t.id}">Delete</button>
+    </div>
+  </div>`
+}).join(''):'<div class="empty">No tasks here ✨</div>';
+
+document.querySelectorAll('[data-t]').forEach(x=>x.onchange=()=>updateRow('tasks',x.dataset.t,{completed:x.checked}));
+document.querySelectorAll('[data-m]').forEach(x=>x.onchange=()=>updateRow('mini_tasks',x.dataset.m,{completed:x.checked}));
+document.querySelectorAll('.addmini').forEach(x=>x.onclick=async()=>{
+  let title=prompt('Enter mini task:');
+  if(title&&title.trim()) await addRow('mini_tasks',{task_id:x.dataset.id,title:title.trim(),completed:false});
+});
+document.querySelectorAll('.mini-delete').forEach(x=>x.onclick=()=>deleteRow('mini_tasks',x.dataset.mid));
+document.querySelectorAll('.delt').forEach(x=>x.onclick=()=>deleteRow('tasks',x.dataset.id))
+}
 $('at').onclick=async()=>{let n=$('tn').value.trim();if(!n)return;await addRow('tasks',{title:n,task_type:$('tt').value,task_date:$('td').value,note:$('tnote').value.trim(),completed:false});$('tn').value='';$('tnote').value=''};
 $('tabs').onclick=e=>{if(!e.target.dataset.f)return;F=e.target.dataset.f;document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.toggle('active',x===e.target));renderT()};
 function renderE(){let a=[...D.events].sort((a,b)=>(a.event_date+a.event_time).localeCompare(b.event_date+b.event_time));$('el').innerHTML=a.length?a.map(e=>`<div class="event"><strong>${esc(e.title)}</strong><div class="meta"><span class="badge">${esc(e.event_type)}</span> ${nice(e.event_date)} ${e.event_time||''} <button class="icon dele" data-id="${e.id}">Delete</button></div></div>`).join(''):'<div class="empty">No events added.</div>';document.querySelectorAll('.dele').forEach(x=>x.onclick=()=>deleteRow('calendar_events',x.dataset.id))}

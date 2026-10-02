@@ -119,6 +119,7 @@
   .tab{padding:10px 12px}
   .event{padding:13px 2px}
   .expense{grid-template-columns:1fr 1fr;gap:9px}
+  #reminders .form button{width:100%}
   .expense button{grid-column:2;justify-self:end}
   .people{grid-template-columns:1fr}
   #quick{font-size:13px;padding:10px}
@@ -157,7 +158,7 @@
 </div>
 </section>
 <section id="calendar" class="page"><div class="card"><h2>Add Calendar Event</h2><div class="form"><input id="en" placeholder="Meeting / event / appointment"><select id="et"><option>Meeting</option><option>Event</option><option>Appointment</option><option>Personal</option></select><input id="ed" type="date"><input id="etime" type="time"><button id="ae">Add</button></div></div><div class="card"><h2>Calendar / Events</h2><div id="el"></div></div></section>
-<section id="reminders" class="page"><div class="card"><h2>Future Reminder</h2><p class="muted">Birthdays, anniversaries, bill dates, renewals, follow-ups, calls, etc.</p><div class="form"><input id="rn" placeholder="Reminder"><select id="rr"><option>Once</option><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select><input id="rd" type="date"><input id="rnote" placeholder="Note"><button id="ar">Add</button></div></div><div class="card"><div id="rl"></div></div></section>
+<section id="reminders" class="page"><div class="card"><h2>Add Future Reminder</h2><p class="muted">Birthdays, anniversaries, bills, renewals, follow-ups, calls, and anything you don't want to forget.</p><div class="form"><input id="rn" placeholder="Reminder e.g. Electricity bill"><select id="rc"><option>General</option><option>Birthday</option><option>Anniversary</option><option>Bill</option><option>Renewal</option><option>Follow-up</option><option>Call</option></select><select id="rr"><option>Once</option><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select><input id="rd" type="date"><input id="rnote" placeholder="Note / details"><button id="ar">Add Reminder</button></div></div><div class="card"><div class="sectionhead"><h2>My Reminders</h2><span id="remCount" class="badge">0</span></div><div id="rl"></div></div></section>
 <section id="expenses" class="page"><div class="card"><h2>Household Expenses</h2><div class="form"><input id="xn" placeholder="Driver / Tailor / Electrician / Grocery"><input id="xc" placeholder="Category"><input id="xa" type="number" min="0" placeholder="Amount ₹"><input id="xd" type="date"><button id="ax">Add</button></div></div><div class="card"><div class="sectionhead"><h2>Expense Records</h2><b id="xt">₹0</b></div><div id="xl"></div></div></section>
 <section id="people" class="page"><div class="card"><h2>Staff & Service Contacts</h2><div class="form"><input id="pn" placeholder="Name"><input id="pr" placeholder="Role / service"><input id="pp" placeholder="Phone"><input id="pay" type="number" placeholder="Monthly payment ₹"><button id="ap">Add</button></div></div><div class="card"><div class="people" id="pl"></div></div></section></main></div>
 <script>
@@ -242,8 +243,21 @@ $('at').onclick=async()=>{let n=$('tn').value.trim();if(!n)return;await addRow('
 $('tabs').onclick=e=>{if(!e.target.dataset.f)return;F=e.target.dataset.f;document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.toggle('active',x===e.target));renderT()};
 function renderE(){let a=[...D.events].sort((a,b)=>(a.event_date+a.event_time).localeCompare(b.event_date+b.event_time));$('el').innerHTML=a.length?a.map(e=>`<div class="event"><strong>${esc(e.title)}</strong><div class="meta"><span class="badge">${esc(e.event_type)}</span> ${nice(e.event_date)} ${e.event_time||''} <button class="icon dele" data-id="${e.id}">Delete</button></div></div>`).join(''):'<div class="empty">No events added.</div>';document.querySelectorAll('.dele').forEach(x=>x.onclick=()=>deleteRow('calendar_events',x.dataset.id))}
 $('ae').onclick=async()=>{let n=$('en').value.trim();if(!n)return;await addRow('calendar_events',{title:n,event_type:$('et').value,event_date:$('ed').value,event_time:$('etime').value||null});$('en').value='';$('etime').value=''};
-function renderR(){$('rl').innerHTML=D.reminders.length?D.reminders.sort((a,b)=>a.reminder_date.localeCompare(b.reminder_date)).map(r=>`<div class="task"><input class="check rem" type="checkbox" ${r.completed?'checked':''} data-id="${r.id}"><div class="grow"><div class="title">${esc(r.title)}</div><div class="meta">${esc(r.repeat_type)} • ${nice(r.reminder_date)}${r.note?' • '+esc(r.note):''}</div></div><button class="icon delr" data-id="${r.id}">Delete</button></div>`).join(''):'<div class="empty">No future reminders.</div>';document.querySelectorAll('.delr').forEach(x=>x.onclick=()=>deleteRow('reminders',x.dataset.id));document.querySelectorAll('.rem').forEach(x=>x.onchange=()=>updateRow('reminders',x.dataset.id,{completed:x.checked}))}
-$('ar').onclick=async()=>{let n=$('rn').value.trim();if(!n)return;await addRow('reminders',{title:n,repeat_type:$('rr').value,reminder_date:$('rd').value,note:$('rnote').value.trim(),completed:false});$('rn').value='';$('rnote').value=''};
+function renderR(){
+let a=[...D.reminders].sort((x,y)=>String(x.reminder_date||'').localeCompare(String(y.reminder_date||'')));
+$('remCount').textContent=a.filter(r=>!r.completed).length;
+$('rl').innerHTML=a.length?a.map(r=>`<div class="task ${r.completed?'done':''}">
+  <input class="check rem" type="checkbox" ${r.completed?'checked':''} data-id="${r.id}">
+  <div class="grow">
+    <div class="title">${esc(r.title)}</div>
+    <div class="meta"><span class="badge">${esc(r.category||'General')}</span> ${esc(r.repeat_type)} • ${nice(r.reminder_date)}${r.note?' • '+esc(r.note):''}</div>
+  </div>
+  <button class="icon delr" data-id="${r.id}">Delete</button>
+</div>`).join(''):'<div class="empty">No reminders yet. Add your first reminder above 🔔</div>';
+document.querySelectorAll('.delr').forEach(x=>x.onclick=()=>deleteRow('reminders',x.dataset.id));
+document.querySelectorAll('.rem').forEach(x=>x.onchange=()=>updateRow('reminders',x.dataset.id,{completed:x.checked}))
+}
+$('ar').onclick=async()=>{let n=$('rn').value.trim();if(!n)return;await addRow('reminders',{title:n,category:$('rc').value,repeat_type:$('rr').value,reminder_date:$('rd').value,note:$('rnote').value.trim(),completed:false});$('rn').value='';$('rnote').value='';$('rc').value='General';$('rr').value='Once';$('rd').value=now()};
 function renderX(){let total=D.expenses.filter(x=>x.expense_date.slice(0,7)===now().slice(0,7)).reduce((s,x)=>s+Number(x.amount),0);$('xt').textContent=money(total);let a=[...D.expenses].sort((a,b)=>b.expense_date.localeCompare(a.expense_date));$('xl').innerHTML=a.length?a.map(x=>`<div class="expense"><div><b>${esc(x.name)}</b><div class="meta">${esc(x.category||'')}</div></div><div>${nice(x.expense_date)}</div><div class="money">${money(x.amount)}</div><button class="icon delx" data-id="${x.id}">Delete</button></div>`).join(''):'<div class="empty">No expenses recorded.</div>';document.querySelectorAll('.delx').forEach(b=>b.onclick=()=>deleteRow('expenses',b.dataset.id))}
 $('ax').onclick=async()=>{let n=$('xn').value.trim(),a=Number($('xa').value);if(!n||!a)return;await addRow('expenses',{name:n,category:$('xc').value.trim(),amount:a,expense_date:$('xd').value});['xn','xc','xa'].forEach(x=>$(x).value='')};
 function renderP(){$('pl').innerHTML=D.people.length?D.people.map(p=>`<div class="person"><b>${esc(p.name)}</b><div class="meta">${esc(p.role||'')}</div><div>${esc(p.phone||'')}</div><div class="money">${p.monthly_payment?money(p.monthly_payment)+'/month':''}</div><button class="icon delp" data-id="${p.id}">Delete</button></div>`).join(''):'<div class="empty">Add drivers, tailors, electricians, maids, vendors, etc.</div>';document.querySelectorAll('.delp').forEach(b=>b.onclick=()=>deleteRow('staff',b.dataset.id))}

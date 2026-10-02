@@ -256,6 +256,17 @@
 .priority-medium{background:#fff4d6;color:#8a5a00}
 .priority-low{background:#e8f5ee;color:#18794e}
 .task-priority{margin-top:5px}
+
+.priority-select{
+  padding:5px 8px;
+  border:1px solid #d7dbe3;
+  border-radius:20px;
+  background:#fff;
+  font-size:12px;
+  font-weight:bold;
+  cursor:pointer;
+}
+.priority-select:focus{outline:2px solid #dfe3ea;outline-offset:1px}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
 <section id="dashboard" class="page active">
   <div class="grid">
@@ -395,7 +406,12 @@ async function addRow(table,row){const {error}=await supabaseClient.from(table).
 async function updateRow(table,id,patch){const {error}=await supabaseClient.from(table).update(patch).eq('id',id).eq('user_id',USER.id);if(error){alert(error.message);throw error}await loadAll()}
 async function deleteRow(table,id){if(!confirm('Delete this item?'))return;const {error}=await supabaseClient.from(table).delete().eq('id',id).eq('user_id',USER.id);if(error){alert(error.message);return}await loadAll()}
 function miniFor(taskId){return D.mini_tasks.filter(m=>m.task_id===taskId)}
-function tasks(){return D.tasks.filter(t=>F==='done'?t.completed:!t.completed&&(F==='all'||F==='today'&&t.task_date===now()||['Daily','Weekly','Monthly'].includes(F)&&t.task_type===F)).sort((a,b)=>(a.task_date||'9999').localeCompare(b.task_date||'9999'))}
+function tasks(){
+  let priorityRank={High:0,Medium:1,Low:2};
+  return D.tasks
+    .filter(t=>F==='done'?t.completed:!t.completed&&(F==='all'||F==='today'&&t.task_date===now()||['Daily','Weekly','Monthly'].includes(F)&&t.task_type===F))
+    .sort((a,b)=>(priorityRank[a.priority||'Medium']??1)-(priorityRank[b.priority||'Medium']??1)||(a.task_date||'9999').localeCompare(b.task_date||'9999'));
+}
 function renderT(){
 let a=tasks();
 $('tl').innerHTML=a.length?a.map(t=>{
@@ -405,7 +421,13 @@ $('tl').innerHTML=a.length?a.map(t=>{
     <input class="check" type="checkbox" ${t.completed?'checked':''} data-t="${t.id}">
     <div class="grow">
       <div class="title">${esc(t.title)}</div>
-      <div class="meta">${esc(t.task_type)} • ${nice(t.task_date)}${t.note?' • '+esc(t.note):''}</div><div class="task-priority"><span class="priority-badge priority-${String(t.priority||'Medium').toLowerCase()}">${esc(t.priority||'Medium')} Priority</span></div>
+      <div class="meta">${esc(t.task_type)} • ${nice(t.task_date)}${t.note?' • '+esc(t.note):''}</div><div class="task-priority">
+  <select class="priority-select" data-pid="${t.id}" aria-label="Task priority">
+    <option ${((t.priority||'Medium')==='High')?'selected':''}>High</option>
+    <option ${((t.priority||'Medium')==='Medium')?'selected':''}>Medium</option>
+    <option ${((t.priority||'Medium')==='Low')?'selected':''}>Low</option>
+  </select>
+</div>
       ${ms.length?`<div class="mini-box">
         <div class="mini-head"><span>Mini Tasks</span><span>${doneCount}/${ms.length}</span></div>
         ${ms.map(m=>`<div class="mini-row">
@@ -437,6 +459,10 @@ $('completedList').innerHTML=completed.length?completed.map(t=>`
 
 document.querySelectorAll('[data-t]').forEach(x=>x.onchange=()=>updateRow('tasks',x.dataset.t,{completed:x.checked}));
 document.querySelectorAll('[data-m]').forEach(x=>x.onchange=()=>updateRow('mini_tasks',x.dataset.m,{completed:x.checked}));
+document.querySelectorAll('.priority-select').forEach(x=>x.onchange=async()=>{
+  let value=x.value;
+  await updateRow('tasks',x.dataset.pid,{priority:value});
+});
 document.querySelectorAll('.edit-task').forEach(x=>x.onclick=async()=>{
   let t=D.tasks.find(a=>String(a.id)===String(x.dataset.id));if(!t)return;
   let title=prompt('Task title:',t.title);if(title===null)return;title=title.trim();if(!title)return;

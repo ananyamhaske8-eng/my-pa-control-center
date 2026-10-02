@@ -267,6 +267,16 @@
   cursor:pointer;
 }
 .priority-select:focus{outline:2px solid #dfe3ea;outline-offset:1px}
+
+.category-badge{font-size:11px;background:#eef0f4;color:#4b5563;padding:4px 7px;border-radius:20px;white-space:nowrap}
+.task-category{margin-top:5px}
+.category-filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.category-filter{background:#eef0f4;color:#333;border:0}
+.category-filter.active{background:#222;color:#fff}
+@media(max-width:650px){
+  .category-filters{gap:6px}
+  .category-filter{padding:9px 10px}
+}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
 <section id="dashboard" class="page active">
   <div class="grid">
@@ -309,6 +319,11 @@
     </div>
 
     <div class="dashboard-card">
+      <div class="sectionhead"><h2>Tasks by Category</h2><button class="secondary" data-go="tasks">Manage</button></div>
+      <div id="dcats" class="money-summary"></div>
+    </div>
+
+    <div class="dashboard-card">
       <div class="sectionhead"><h2>Quick Actions</h2></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <button data-go="tasks">+ Add Task</button>
@@ -319,7 +334,16 @@
     </div>
   </div>
 </section>
-<section id="tasks" class="page"><div class="card"><h2>Add Task / Mini Task</h2><div class="form"><input id="tn" placeholder="Task e.g. Call electrician"><select id="tt"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>One-time</option></select><input id="td" type="date"><input id="tnote" placeholder="Mini task / note"><select id="tp"><option>Medium</option><option>High</option><option>Low</option></select><button id="at">Add</button></div></div><div class="card"><div class="tabs" id="tabs"><button class="tab active" data-f="all">Active</button><button class="tab" data-f="today">Today</button><button class="tab" data-f="Daily">Daily</button><button class="tab" data-f="Weekly">Weekly</button><button class="tab" data-f="Monthly">Monthly</button><button class="tab" data-f="done">Completed</button></div><div id="tl"></div>
+<section id="tasks" class="page"><div class="card"><h2>Add Task / Mini Task</h2><div class="form"><input id="tn" placeholder="Task e.g. Call electrician"><select id="tt"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>One-time</option></select><input id="td" type="date"><select id="tc"><option>Home</option><option>Office / PA</option><option>MBA</option><option>Finance</option><option>Follow-up</option><option>Personal</option></select><input id="tnote" placeholder="Mini task / note"><select id="tp"><option>Medium</option><option>High</option><option>Low</option></select><button id="at">Add</button></div></div><div class="card"><div class="category-filters" id="categoryFilters">
+  <button class="category-filter active" data-c="all">All Categories</button>
+  <button class="category-filter" data-c="Home">🏠 Home</button>
+  <button class="category-filter" data-c="Office / PA">💼 Office / PA</button>
+  <button class="category-filter" data-c="MBA">🎓 MBA</button>
+  <button class="category-filter" data-c="Finance">💰 Finance</button>
+  <button class="category-filter" data-c="Follow-up">📞 Follow-up</button>
+  <button class="category-filter" data-c="Personal">👤 Personal</button>
+</div>
+<div class="tabs" id="tabs"><button class="tab active" data-f="all">Active</button><button class="tab" data-f="today">Today</button><button class="tab" data-f="Daily">Daily</button><button class="tab" data-f="Weekly">Weekly</button><button class="tab" data-f="Monthly">Monthly</button><button class="tab" data-f="done">Completed</button></div><div id="tl"></div>
 </div>
 <div class="card completed-card">
   <div class="sectionhead">
@@ -406,10 +430,15 @@ async function addRow(table,row){const {error}=await supabaseClient.from(table).
 async function updateRow(table,id,patch){const {error}=await supabaseClient.from(table).update(patch).eq('id',id).eq('user_id',USER.id);if(error){alert(error.message);throw error}await loadAll()}
 async function deleteRow(table,id){if(!confirm('Delete this item?'))return;const {error}=await supabaseClient.from(table).delete().eq('id',id).eq('user_id',USER.id);if(error){alert(error.message);return}await loadAll()}
 function miniFor(taskId){return D.mini_tasks.filter(m=>m.task_id===taskId)}
+let C='all';
 function tasks(){
   let priorityRank={High:0,Medium:1,Low:2};
   return D.tasks
-    .filter(t=>F==='done'?t.completed:!t.completed&&(F==='all'||F==='today'&&t.task_date===now()||['Daily','Weekly','Monthly'].includes(F)&&t.task_type===F))
+    .filter(t=>{
+      let matchesView=F==='done'?t.completed:!t.completed&&(F==='all'||F==='today'&&t.task_date===now()||['Daily','Weekly','Monthly'].includes(F)&&t.task_type===F);
+      let matchesCategory=C==='all'||(t.category||'Home')===C;
+      return matchesView&&matchesCategory;
+    })
     .sort((a,b)=>(priorityRank[a.priority||'Medium']??1)-(priorityRank[b.priority||'Medium']??1)||(a.task_date||'9999').localeCompare(b.task_date||'9999'));
 }
 function renderT(){
@@ -421,7 +450,8 @@ $('tl').innerHTML=a.length?a.map(t=>{
     <input class="check" type="checkbox" ${t.completed?'checked':''} data-t="${t.id}">
     <div class="grow">
       <div class="title">${esc(t.title)}</div>
-      <div class="meta">${esc(t.task_type)} • ${nice(t.task_date)}${t.note?' • '+esc(t.note):''}</div><div class="task-priority">
+      <div class="meta">${esc(t.task_type)} • ${nice(t.task_date)}${t.note?' • '+esc(t.note):''}</div><div class="task-category"><span class="category-badge">${esc(t.category||'Home')}</span></div>
+       <div class="task-priority">
   <select class="priority-select" data-pid="${t.id}" aria-label="Task priority">
     <option ${((t.priority||'Medium')==='High')?'selected':''}>High</option>
     <option ${((t.priority||'Medium')==='Medium')?'selected':''}>Medium</option>
@@ -452,7 +482,7 @@ $('completedList').innerHTML=completed.length?completed.map(t=>`
     <input class="check" type="checkbox" checked data-rc="${t.id}">
     <div class="grow">
       <div class="completed-title">${esc(t.title)}</div>
-      <div class="completed-meta">${esc(t.task_type)} • ${nice(t.task_date)} • ${esc(t.priority||'Medium')} Priority</div>
+      <div class="completed-meta">${esc(t.category||'Home')} • ${esc(t.task_type)} • ${nice(t.task_date)} • ${esc(t.priority||'Medium')} Priority</div>
     </div>
     <button class="icon completed-delete" data-cid="${t.id}">Delete</button>
   </div>`).join(''):'<div class="completed-empty">No completed tasks yet. Finish a task and it will appear here. ✅</div>';
@@ -463,6 +493,11 @@ document.querySelectorAll('.priority-select').forEach(x=>x.onchange=async()=>{
   let value=x.value;
   await updateRow('tasks',x.dataset.pid,{priority:value});
 });
+document.querySelectorAll('.category-filter').forEach(x=>x.onclick=()=>{
+  C=x.dataset.c||'all';
+  document.querySelectorAll('#categoryFilters .category-filter').forEach(b=>b.classList.toggle('active',b===x));
+  renderT();
+});
 document.querySelectorAll('.edit-task').forEach(x=>x.onclick=async()=>{
   let t=D.tasks.find(a=>String(a.id)===String(x.dataset.id));if(!t)return;
   let title=prompt('Task title:',t.title);if(title===null)return;title=title.trim();if(!title)return;
@@ -470,8 +505,10 @@ document.querySelectorAll('.edit-task').forEach(x=>x.onclick=async()=>{
   let date=prompt('Date (YYYY-MM-DD):',t.task_date||now());if(date===null)return;date=date.trim()||now();
   let priority=prompt('Priority (High / Medium / Low):',t.priority||'Medium');if(priority===null)return;
   priority=priority.trim().toLowerCase();priority=priority==='high'?'High':priority==='low'?'Low':'Medium';
+  let category=prompt('Category (Home / Office / PA / MBA / Finance / Follow-up / Personal):',t.category||'Home');if(category===null)return;
+  category=category.trim()||'Home';
   let note=prompt('Note:',t.note||'');if(note===null)return;
-  await updateRow('tasks',t.id,{title,task_type:type,task_date:date,priority,note:note.trim()});
+  await updateRow('tasks',t.id,{title,task_type:type,task_date:date,priority,category,note:note.trim()});
 });
 document.querySelectorAll('.addmini').forEach(x=>x.onclick=async()=>{
   let title=prompt('Enter mini task:');
@@ -482,7 +519,7 @@ document.querySelectorAll('.delt').forEach(x=>x.onclick=()=>deleteRow('tasks',x.
 document.querySelectorAll('[data-rc]').forEach(x=>x.onchange=()=>updateRow('tasks',x.dataset.rc,{completed:false}));
 document.querySelectorAll('.completed-delete').forEach(x=>x.onclick=()=>deleteRow('tasks',x.dataset.cid));
 }
-$('at').onclick=async()=>{let n=$('tn').value.trim();if(!n)return;await addRow('tasks',{title:n,task_type:$('tt').value,task_date:$('td').value,note:$('tnote').value.trim(),priority:$('tp').value,completed:false});$('tn').value='';$('tnote').value='';$('tp').value='Medium'};
+$('at').onclick=async()=>{let n=$('tn').value.trim();if(!n)return;await addRow('tasks',{title:n,task_type:$('tt').value,task_date:$('td').value,category:$('tc').value,note:$('tnote').value.trim(),priority:$('tp').value,completed:false});$('tn').value='';$('tnote').value='';$('tp').value='Medium';$('tc').value='Home'};
 $('tabs').onclick=e=>{if(!e.target||!e.target.dataset.f)return;F=e.target.dataset.f;document.querySelectorAll('#tabs .tab').forEach(x=>{if(x&&x.classList)x.classList.toggle('active',x===e.target)});renderT()};
 function renderE(){
 let a=[...D.events].sort((x,y)=>(String(x.event_date||'')+String(x.event_time||'')).localeCompare(String(y.event_date||'')+String(y.event_time||'')));
@@ -576,7 +613,7 @@ function dash(){
       <input class="check dashc" type="checkbox" data-id="${t.id}">
       <div class="grow">
         <div class="dash-title">${esc(t.title)}</div>
-        <div class="dash-meta">${esc(t.task_type)} • ${esc(t.priority||'Medium')} Priority${t.note?' • '+esc(t.note):''}</div>
+        <div class="dash-meta">${esc(t.category||'Home')} • ${esc(t.task_type)} • ${esc(t.priority||'Medium')} Priority${t.note?' • '+esc(t.note):''}</div>
       </div>
     </div>`).join(''):'<div class="dashboard-empty">No tasks today 🎉</div>';
 
@@ -603,6 +640,12 @@ function dash(){
     <div class="money-mini"><span>Spent this month</span><b>${money(monthOut)}</b></div>
     <div class="money-mini"><span>Overall balance</span><b>${money(balance)}</b></div>`;
 
+  let categoryNames=['Home','Office / PA','MBA','Finance','Follow-up','Personal'];
+  $('dcats').innerHTML=categoryNames.map(c=>{
+    let count=D.tasks.filter(t=>!t.completed&&(t.category||'Home')===c).length;
+    return `<div class="money-mini"><span>${esc(c)}</span><b>${count}</b></div>`;
+  }).join('');
+
   let highPriority=D.tasks.filter(t=>!t.completed&&(t.priority||'Medium')==='High')
     .sort((a,b)=>(a.task_date||'9999').localeCompare(b.task_date||'9999')).slice(0,6);
   $('dhp').innerHTML=highPriority.length?highPriority.map(t=>`
@@ -610,7 +653,7 @@ function dash(){
       <input class="check dashhp" type="checkbox" data-id="${t.id}">
       <div class="grow">
         <div class="dash-title">${esc(t.title)}</div>
-        <div class="dash-meta">${nice(t.task_date)} • ${esc(t.task_type)}${t.note?' • '+esc(t.note):''}</div>
+        <div class="dash-meta">${esc(t.category||'Home')} • ${nice(t.task_date)} • ${esc(t.task_type)}${t.note?' • '+esc(t.note):''}</div>
       </div>
       <span class="priority-badge priority-high">High</span>
     </div>`).join(''):'<div class="dashboard-empty">No high-priority tasks 🎉</div>';

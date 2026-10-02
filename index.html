@@ -350,8 +350,8 @@ $('xin').textContent=money(income);
 $('xout').textContent=money(outflow);
 let balance=income-outflow;
   $('xbal').textContent=money(balance);
-  $('balanceCard').classList.toggle('negative',balance<0);
-  $('balanceCard').classList.toggle('positive',balance>=0);
+  if($('balanceCard'))$('balanceCard').classList.toggle('negative',balance<0);
+  if($('balanceCard'))$('balanceCard').classList.toggle('positive',balance>=0);
 $('xcount').textContent=D.expenses.length;
 let a=[...D.expenses].sort((x,y)=>String(y.expense_date||'').localeCompare(String(x.expense_date||'')));
 $('xl').innerHTML=a.length?a.map(x=>{

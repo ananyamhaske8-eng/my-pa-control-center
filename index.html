@@ -10,18 +10,6 @@
     z-index:10001;
     left:0;
     top:0;
-    width:245px;<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My PA Control Center</title><style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f6fa;color:#20232a}.app{display:flex;min-height:100vh}.side{width:220px;background:#20222a;color:white;padding:18px 12px}.brand{font-size:19px;font-weight:bold;padding:10px;margin-bottom:15px}.nav button{display:block;width:100%;border:0;background:none;color:#c9ccd5;text-align:left;padding:12px;border-radius:9px;margin:3px 0;cursor:pointer}.nav button.active,.nav button:hover{background:#353844;color:white}.main{flex:1;padding:24px;max-width:1400px}.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}h1{margin:0 0 5px;font-size:28px}.muted{color:#737b88;font-size:13px}.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:13px}.card{background:white;border:1px solid #e4e7ec;border-radius:14px;padding:16px;margin-bottom:16px}.stat b{display:block;font-size:26px;margin-top:6px}.form{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px}input,select,button{font:inherit;padding:11px;border:1px solid #d7dbe3;border-radius:9px}button{background:#22252d;color:white;border-color:#22252d;cursor:pointer;font-weight:bold}.secondary,.icon{background:white;color:#333}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tab{background:#eef0f4;color:#333;border:0}.tab.active{background:#222;color:white}.task{display:flex;gap:10px;align-items:flex-start;padding:12px 3px;border-bottom:1px solid #eee}.check{width:21px;height:21px;accent-color:#222}.grow{flex:1;min-width:0}.title{font-weight:bold;word-break:break-word}.done .title{text-decoration:line-through;color:#999}.meta{font-size:12px;color:#7b8290;margin-top:4px}.actions{display:flex;gap:5px}.icon{padding:7px 9px}.danger{color:#b42318}.two{display:grid;grid-template-columns:1.2fr .8fr;gap:15px}.sectionhead{display:flex;justify-content:space-between;align-items:center}.sectionhead h2{font-size:18px;margin:0 0 10px}.empty{text-align:center;color:#8a919e;padding:28px}.event{padding:11px 2px;border-bottom:1px solid #eee}.event strong{display:block}.badge{font-size:11px;background:#eef0f4;padding:4px 7px;border-radius:20px}.expense{display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:8px;padding:11px 2px;border-bottom:1px solid #eee}.people{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.person{border:1px solid #e3e6eb;border-radius:11px;padding:12px}.person b{display:block;margin-bottom:5px}.money{font-weight:bold}@media(max-width:900px){.side{width:70px}.brand{font-size:0;text-align:center}.brand:after{content:'✓';font-size:22px}.nav button{font-size:0;text-align:center}.nav button:after{content:'•';font-size:18px}.main{padding:15px}.grid{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.people{grid-template-columns:1fr 1fr}}@media(max-width:650px){.form{grid-template-columns:1fr 1fr}.form input:first-child{grid-column:1/-1}.form button{grid-column:1/-1}.expense{grid-template-columns:1fr 1fr}.top h1{font-size:22px}}
-/* Mobile layout: full-width content + slide-out menu */
-.mobile-menu,.close-menu,.mobile-overlay{display:none}
-@media(max-width:650px){
-  #logout{display:none}
-  .app{min-height:100vh}
-  .side{
-    position:fixed;
-    z-index:10001;
-    left:0;
-    top:0;
     width:245px;
     min-width:245px;
     height:100vh;
@@ -210,6 +198,57 @@
   .dashboard-card{padding:14px}
   .money-summary{grid-template-columns:1fr}
   .dash-row{padding:12px 2px}
+}
+
+/* Mobile transaction layout fix */
+@media(max-width:650px){
+  .transaction{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:9px 12px;
+    padding:14px 2px;
+    align-items:center;
+  }
+  .transaction > div:first-child{
+    grid-column:1/-1;
+    min-width:0;
+  }
+  .transaction > div:nth-child(2){
+    grid-column:1;
+    grid-row:auto;
+    justify-self:start;
+  }
+  .transaction > div:nth-child(3){
+    grid-column:2;
+    grid-row:auto;
+    justify-self:end;
+    white-space:nowrap;
+  }
+  .transaction > div:nth-child(4){
+    grid-column:1;
+    grid-row:auto;
+    font-size:13px;
+    color:#737b88;
+  }
+  .transaction > button{
+    grid-column:2;
+    grid-row:auto;
+    justify-self:end;
+  }
+  .transaction-title{
+    font-size:16px;
+    line-height:1.3;
+    word-break:normal;
+    overflow-wrap:anywhere;
+  }
+  .transaction-meta{
+    line-height:1.4;
+    overflow-wrap:anywhere;
+  }
+  .transaction-note{
+    line-height:1.4;
+    overflow-wrap:anywhere;
+  }
 }
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
 <section id="dashboard" class="page active">
@@ -527,390 +566,6 @@ function dash(){
     </div>`).join(''):'<div class="dashboard-empty">No staff or service contacts yet.</div>';
 
   document.querySelectorAll('.dashc').forEach(b=>b.onchange=()=>updateRow('tasks',b.dataset.id,{completed:true}));
-}
-function render(){renderT();renderE();renderR();renderX();renderP();dash()}
-function syncMobileMenuVisibility(){
-  const menu=$('mobileMenu');
-  const app=$('app');
-  if(menu && app) menu.style.display = (app.style.display==='none') ? 'none' : '';
-}
-async function startApp(){try{await getUser();if(!USER){$('auth').style.display='flex';$('app').style.display='none';syncMobileMenuVisibility();msg('Please sign in.');return}$('auth').style.display='none';$('app').style.display='flex';syncMobileMenuVisibility();await loadAll()}catch(e){console.error('START APP ERROR',e);$('auth').style.display='flex';$('app').style.display='none';msg(e.message||'Could not connect to Supabase.')}}
-supabaseClient.auth.onAuthStateChange(()=>setTimeout(startApp,0));startApp();
-</script></body></html>
-
-    min-width:245px;
-    height:100vh;
-    padding:16px 12px;
-    overflow-y:auto;
-    transform:translateX(-100%);
-    transition:transform .22s ease;
-    box-shadow:8px 0 24px rgba(0,0,0,.18)
-  }
-  .side.open{transform:translateX(0)}
-  .brand{
-    font-size:17px;
-    text-align:left;
-    padding:10px 8px 18px;
-    white-space:nowrap;
-    display:flex;
-    align-items:center;
-    justify-content:space-between
-  }
-  .brand:after{content:none}
-  .close-menu{
-    display:block;
-    background:transparent;
-    border:0;
-    color:#fff;
-    font-size:28px;
-    line-height:1;
-    padding:2px 7px
-  }
-  .nav button{
-    font-size:14px;
-    text-align:left;
-    padding:13px 12px;
-    white-space:normal;
-    line-height:1.25
-  }
-  .nav button:after{content:none}
-  .mobile-menu{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:fixed;
-    z-index:10002;
-    left:12px;
-    top:76px;
-    width:44px;
-    height:44px;
-    padding:0;
-    border-radius:12px;
-    font-size:23px;
-    line-height:1;
-    background:#22252d;
-    color:#fff;
-    border:0;
-    box-shadow:0 3px 12px rgba(0,0,0,.22)
-  }
-  .mobile-overlay{
-    position:fixed;
-    inset:0;
-    z-index:10000;
-    background:rgba(0,0,0,.38)
-  }
-  .mobile-overlay.show{display:block}
-  .main{
-    width:100%;
-    min-width:0;
-    padding:18px 12px 28px
-  }
-  .top{
-    gap:10px;
-    align-items:center;
-    padding-left:58px
-  }
-  .top h1{font-size:22px}
-  .top .muted{line-height:1.35}
-  .grid{grid-template-columns:1fr 1fr;gap:10px}
-  .card{padding:14px;border-radius:14px}
-  .form{grid-template-columns:1fr;gap:9px}
-  .form input:first-child{grid-column:auto}
-  .form button{grid-column:auto;width:100%}
-  .task{
-    display:grid;
-    grid-template-columns:24px minmax(0,1fr);
-    gap:9px;
-    align-items:start;
-    padding:14px 2px
-  }
-  .task > .check{grid-column:1}
-  .task > .grow{grid-column:2;min-width:0}
-  .task > .actions{
-    grid-column:2;
-    display:flex;
-    flex-wrap:wrap;
-    gap:7px;
-    width:100%;
-    margin-top:2px
-  }
-  .task > .actions .icon{flex:0 0 auto}.mini-box{width:100%;margin-top:9px}.mini-row span{min-width:0;overflow-wrap:anywhere}
-  .title{
-    font-size:16px;
-    line-height:1.35;
-    overflow-wrap:anywhere;
-    word-break:normal
-  }
-  .meta{line-height:1.45;overflow-wrap:anywhere}
-  .tabs{gap:7px}
-  .tab{padding:10px 12px}
-  .event{padding:13px 2px}
-  .expense{grid-template-columns:1fr 1fr;gap:9px}
-  #reminders .form button{width:100%}
-  #calendar .form button{width:100%}
-  #expenses .form button{width:100%}
-  #expenses .money-stats{grid-template-columns:1fr}
-  .transaction{grid-template-columns:1fr 1fr;gap:8px}
-  .transaction button{justify-self:end}
-  .transaction .transaction-title{grid-column:1/-1}
-  .event-actions{flex-wrap:wrap}
-  .expense button{grid-column:2;justify-self:end}
-  .people{grid-template-columns:1fr}
-  #quick{font-size:13px;padding:10px}
-}
-@media(max-width:390px){
-  .grid{grid-template-columns:1fr}
-  .top{padding-left:55px}
-  .top h1{font-size:20px}
-  .tabs .tab{flex:1 1 calc(50% - 7px)}
-}
-
-.mini-box{margin-top:10px;background:#f7f8fa;border:1px solid #e4e7ec;border-radius:10px;padding:9px 10px}
-.mini-head{display:flex;justify-content:space-between;font-size:12px;font-weight:bold;color:#555;margin-bottom:5px}
-.mini-row{display:flex;align-items:center;gap:7px;padding:6px 0;border-top:1px solid #e9ebef;font-size:13px}
-.mini-row:first-of-type{border-top:0}
-.mini-check{width:17px;height:17px;flex:0 0 auto}
-.mini-done{text-decoration:line-through;color:#999}
-.mini-delete{margin-left:auto;background:transparent;border:0;color:#999;padding:2px 6px;font-size:17px;line-height:1}
-
-.completed-card{margin-top:15px}
-.completed-item{display:flex;gap:10px;align-items:flex-start;padding:11px 2px;border-bottom:1px solid #eee}
-.completed-item:last-child{border-bottom:0}
-.completed-title{text-decoration:line-through;color:#8a919e;font-weight:bold}
-.completed-meta{font-size:12px;color:#9aa1ac;margin-top:4px}
-.completed-empty{text-align:center;color:#8a919e;padding:18px}
-
-.event-actions{display:flex;gap:6px;align-items:center;margin-top:7px}
-.event-complete{font-size:12px}
-.event.completed{opacity:.65}
-.event.completed strong{text-decoration:line-through;color:#888}
-
-.money-stats{grid-template-columns:repeat(3,1fr)}
-.transaction{display:grid;grid-template-columns:minmax(0,1.6fr) 1fr 1fr 1fr auto;gap:10px;padding:12px 2px;border-bottom:1px solid #eee;align-items:center}
-.transaction:last-child{border-bottom:0}
-.transaction-title{font-weight:bold;overflow-wrap:anywhere}
-.transaction-meta{font-size:12px;color:#7b8290;margin-top:3px}
-.in-money{font-weight:bold}
-.out-money{font-weight:bold}
-.transaction-note{font-size:12px;color:#8a919e;margin-top:3px}
-
-.money-stats .money-stat{position:relative;overflow:hidden}
-.money-stats .money-stat .stat-label{font-size:13px;color:#737b88}
-.money-stats .money-stat b{font-size:28px}
-.money-stats .money-left{border:2px solid #d8eadf}
-.money-stats .money-left b{font-size:32px}
-.money-left.negative{border-color:#f1d1d1}
-.money-left.negative b{color:#b42318}
-.money-left.positive b{color:#18794e}
-</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
-<section id="dashboard" class="page active"><div class="grid"><div class="card stat"><span>Pending Tasks</span><b id="sp">0</b></div><div class="card stat"><span>Today's Tasks</span><b id="st">0</b></div><div class="card stat"><span>Upcoming Events</span><b id="se">0</b></div><div class="card stat"><span>Completed Today</span><b id="sc">0</b></div><div class="card stat"><span>This Month</span><b id="sx">₹0</b></div></div><div class="two"><div class="card"><div class="sectionhead"><h2>Today's Work</h2><button class="secondary" data-go="tasks">All tasks</button></div><div id="dt"></div></div><div class="card"><div class="sectionhead"><h2>Upcoming</h2><button class="secondary" data-go="calendar">Calendar</button></div><div id="de"></div></div></div></section>
-<section id="tasks" class="page"><div class="card"><h2>Add Task / Mini Task</h2><div class="form"><input id="tn" placeholder="Task e.g. Call electrician"><select id="tt"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>One-time</option></select><input id="td" type="date"><input id="tnote" placeholder="Mini task / note"><button id="at">Add</button></div></div><div class="card"><div class="tabs" id="tabs"><button class="tab active" data-f="all">Active</button><button class="tab" data-f="today">Today</button><button class="tab" data-f="Daily">Daily</button><button class="tab" data-f="Weekly">Weekly</button><button class="tab" data-f="Monthly">Monthly</button><button class="tab" data-f="done">Completed</button></div><div id="tl"></div>
-</div>
-<div class="card completed-card">
-  <div class="sectionhead">
-    <h2>Completed Tasks</h2>
-    <span id="completedCount" class="badge">0</span>
-  </div>
-  <div id="completedList"></div>
-</div>
-</section>
-<section id="calendar" class="page">
-<div class="card">
-  <h2>Add Calendar Event</h2>
-  <p class="muted">Meetings, appointments, personal events and important dates.</p>
-  <div class="form">
-    <input id="en" placeholder="Event e.g. Meeting with client">
-    <select id="et"><option>Meeting</option><option>Event</option><option>Appointment</option><option>Personal</option></select>
-    <input id="ed" type="date">
-    <input id="etime" type="time">
-    <input id="enote" placeholder="Details / location">
-    <button id="ae">Add Event</button>
-  </div>
-</div>
-<div class="card">
-  <div class="sectionhead"><h2>Upcoming Calendar</h2><span id="eventCount" class="badge">0</span></div>
-  <div id="el"></div>
-</div>
-</section>
-<section id="reminders" class="page"><div class="card"><h2>Add Future Reminder</h2><p class="muted">Birthdays, anniversaries, bills, renewals, follow-ups, calls, and anything you don't want to forget.</p><div class="form"><input id="rn" placeholder="Reminder e.g. Electricity bill"><select id="rc"><option>General</option><option>Birthday</option><option>Anniversary</option><option>Bill</option><option>Renewal</option><option>Follow-up</option><option>Call</option></select><select id="rr"><option>Once</option><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select><input id="rd" type="date"><input id="rnote" placeholder="Note / details"><button id="ar">Add Reminder</button></div></div><div class="card"><div class="sectionhead"><h2>My Reminders</h2><span id="remCount" class="badge">0</span></div><div id="rl"></div></div></section>
-<section id="expenses" class="page">
-<div class="card">
-  <h2>Money Manager</h2>
-  <p class="muted">Keep a record of money received and money spent.</p>
-  <div class="form">
-    <input id="xn" placeholder="Description e.g. Salary / Grocery">
-    <select id="xkind"><option>Money Out</option><option>Money In</option></select>
-    <input id="xc" placeholder="Category e.g. Household / Salary">
-    <input id="xa" type="number" min="0" step="0.01" placeholder="Amount ₹">
-    <input id="xd" type="date">
-    <input id="xnote" placeholder="Note (optional)">
-    <button id="ax">Add Transaction</button>
-  </div>
-</div>
-<div class="grid money-stats">
-  <div class="card stat"><span>Total Money Received</span><b id="xin">₹0</b></div>
-  <div class="card stat"><span>Total Money Spent</span><b id="xout">₹0</b></div>
-  <div class="card stat"><span>Money Left</span><b id="xbal">₹0</b></div>
-</div>
-<div class="card">
-  <div class="sectionhead"><h2>Transaction Records</h2><span id="xcount" class="badge">0</span></div>
-  <div id="xl"></div>
-</div>
-</section>
-<section id="people" class="page"><div class="card"><h2>Staff & Service Contacts</h2><div class="form"><input id="pn" placeholder="Name"><input id="pr" placeholder="Role / service"><input id="pp" placeholder="Phone"><input id="pay" type="number" placeholder="Monthly payment ₹"><button id="ap">Add</button></div></div><div class="card"><div class="people" id="pl"></div></div></section></main></div>
-<script>
-const SUPABASE_URL='https://kbeqxmjoedaiiybvbxyb.supabase.co';
-const SUPABASE_KEY='sb_publishable_cDYZQNjjL5jyqhiS5ICZrg_7_etAnKu';
-const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let USER=null,F='all',D={tasks:[],mini_tasks:[],events:[],reminders:[],expenses:[],people:[],notes:[]};
-const $=x=>document.getElementById(x);const now=()=>{let d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-const money=n=>'₹'+Number(n||0).toLocaleString('en-IN');const nice=d=>d?new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'';const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-$('today').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});['td','ed','rd','xd'].forEach(x=>$(x).value=now());
-function msg(t,good=false){$('authMsg').textContent=t||'';$('authMsg').style.color=good?'#18794e':'#b42318'}
-function status(t){$('syncStatus').textContent=t}
-async function getUser(){const {data}=await supabaseClient.auth.getUser();USER=data.user||null;return USER}
-async function authLogin(){let email=$('authEmail').value.trim(),password=$('authPass').value;if(!email||!password){msg('Enter your email and password.');return}msg('Signing in...',true);try{let r=await Promise.race([supabaseClient.auth.signInWithPassword({email,password}),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out. Please refresh and try again.')),15000))]);if(r.error){msg(r.error.message);return}msg('Login successful. Loading your data…',true);await startApp()}catch(e){console.error('LOGIN ERROR',e);msg(e.message||'Could not sign in. Please try again.')}}
-async function authSignup(){let email=$('authEmail').value.trim(),password=$('authPass').value;if(!email||!password){msg('Enter an email and password.');return}if(password.length<6){msg('Password must be at least 6 characters.');return}msg('Creating account...',true);try{let r=await Promise.race([supabaseClient.auth.signUp({email,password}),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out. Please refresh and try again.')),15000))]);if(r.error){msg(r.error.message);return}if(r.data.session){msg('Account created. Signing you in...',true);await startApp()}else msg('Account created. Check your email to confirm it, then sign in.',true)}catch(e){console.error('SIGNUP ERROR',e);msg(e.message||'Could not create account. Please try again.')}}
-$('loginBtn').onclick=authLogin;$('signupBtn').onclick=authSignup;$('authPass').addEventListener('keydown',e=>{if(e.key==='Enter')authLogin()});$('logout').onclick=async()=>{await supabaseClient.auth.signOut()};
-function go(p){document.querySelectorAll('.page').forEach(x=>{if(x&&x.classList)x.classList.toggle('active',x.id===p)});document.querySelectorAll('#nav button').forEach(x=>{if(x&&x.classList)x.classList.toggle('active',x.dataset.p===p)});const h=document.querySelector(`[data-p="${p}"]`);if(h&&$('heading'))$('heading').textContent=h.textContent}const navEl=$('nav');if(navEl)navEl.onclick=e=>{if(e.target.dataset.p)go(e.target.dataset.p)};document.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>go(x.dataset.go));const quickEl=$('quick');if(quickEl)quickEl.onclick=()=>{go('tasks');const tn=$('tn');if(tn)tn.focus()};
-const mobileMenu=$('mobileMenu'),sideBar=$('sideBar'),closeMenu=$('closeMenu'),mobileOverlay=$('mobileOverlay');
-function closeMobileMenu(){if(sideBar)sideBar.classList.remove('open');if(mobileOverlay)mobileOverlay.classList.remove('show')}
-if(mobileMenu)mobileMenu.onclick=()=>{if(sideBar)sideBar.classList.add('open');if(mobileOverlay)mobileOverlay.classList.add('show')};
-if(closeMenu)closeMenu.onclick=closeMobileMenu;
-if(mobileOverlay)mobileOverlay.onclick=closeMobileMenu;
-if(navEl)navEl.addEventListener('click',e=>{if(e.target.dataset.p)closeMobileMenu()});
-
-async function query(table){const {data,error}=await supabaseClient.from(table).select('*').eq('user_id',USER.id);if(error)throw error;return data||[]}
-async function loadAll(){status('Syncing…');try{const [tasks,mini_tasks,events,reminders,expenses,people,notes]=await Promise.all([query('tasks'),query('mini_tasks'),query('calendar_events'),query('reminders'),query('expenses'),query('staff'),query('quick_notes')]);D={tasks,mini_tasks,events,reminders,expenses,people,notes};render();status('✓ Synced')}catch(e){console.error(e);status('Sync error');alert('Could not load cloud data: '+e.message)}}
-async function addRow(table,row){const {error}=await supabaseClient.from(table).insert({...row,user_id:USER.id});if(error){alert(error.message);throw error}await loadAll()}
-async function updateRow(table,id,patch){const {error}=await supabaseClient.from(table).update(patch).eq('id',id).eq('user_id',USER.id);if(error){alert(error.message);throw error}await loadAll()}
-async function deleteRow(table,id){if(!confirm('Delete this item?'))return;const {error}=await supabaseClient.from(table).delete().eq('id',id).eq('user_id',USER.id);if(error){alert(error.message);return}await loadAll()}
-function miniFor(taskId){return D.mini_tasks.filter(m=>m.task_id===taskId)}
-function tasks(){return D.tasks.filter(t=>F==='done'?t.completed:!t.completed&&(F==='all'||F==='today'&&t.task_date===now()||['Daily','Weekly','Monthly'].includes(F)&&t.task_type===F)).sort((a,b)=>(a.task_date||'9999').localeCompare(b.task_date||'9999'))}
-function renderT(){
-let a=tasks();
-$('tl').innerHTML=a.length?a.map(t=>{
-  let ms=miniFor(t.id);
-  let doneCount=ms.filter(m=>m.completed).length;
-  return `<div class="task ${t.completed?'done':''}">
-    <input class="check" type="checkbox" ${t.completed?'checked':''} data-t="${t.id}">
-    <div class="grow">
-      <div class="title">${esc(t.title)}</div>
-      <div class="meta">${esc(t.task_type)} • ${nice(t.task_date)}${t.note?' • '+esc(t.note):''}</div>
-      ${ms.length?`<div class="mini-box">
-        <div class="mini-head"><span>Mini Tasks</span><span>${doneCount}/${ms.length}</span></div>
-        ${ms.map(m=>`<div class="mini-row">
-          <input class="mini-check" type="checkbox" ${m.completed?'checked':''} data-m="${m.id}">
-          <span class="${m.completed?'mini-done':''}">${esc(m.title)}</span>
-          <button class="mini-delete" data-mid="${m.id}" title="Delete mini task">×</button>
-        </div>`).join('')}
-      </div>`:''}
-    </div>
-    <div class="actions">
-      <button class="icon addmini" data-id="${t.id}">+ Mini Task</button>
-      <button class="icon delt" data-id="${t.id}">Delete</button>
-    </div>
-  </div>`
-}).join(''):'<div class="empty">No tasks here ✨</div>';
-
-let completed=[...D.tasks].filter(t=>t.completed).sort((a,b)=>(b.completed_at||b.updated_at||'').localeCompare(a.completed_at||a.updated_at||''));
-$('completedCount').textContent=completed.length;
-$('completedList').innerHTML=completed.length?completed.map(t=>`
-  <div class="completed-item">
-    <input class="check" type="checkbox" checked data-rc="${t.id}">
-    <div class="grow">
-      <div class="completed-title">${esc(t.title)}</div>
-      <div class="completed-meta">${esc(t.task_type)} • ${nice(t.task_date)}</div>
-    </div>
-    <button class="icon completed-delete" data-cid="${t.id}">Delete</button>
-  </div>`).join(''):'<div class="completed-empty">No completed tasks yet. Finish a task and it will appear here. ✅</div>';
-
-document.querySelectorAll('[data-t]').forEach(x=>x.onchange=()=>updateRow('tasks',x.dataset.t,{completed:x.checked}));
-document.querySelectorAll('[data-m]').forEach(x=>x.onchange=()=>updateRow('mini_tasks',x.dataset.m,{completed:x.checked}));
-document.querySelectorAll('.addmini').forEach(x=>x.onclick=async()=>{
-  let title=prompt('Enter mini task:');
-  if(title&&title.trim()) await addRow('mini_tasks',{task_id:x.dataset.id,title:title.trim(),completed:false});
-});
-document.querySelectorAll('.mini-delete').forEach(x=>x.onclick=()=>deleteRow('mini_tasks',x.dataset.mid));
-document.querySelectorAll('.delt').forEach(x=>x.onclick=()=>deleteRow('tasks',x.dataset.id));
-document.querySelectorAll('[data-rc]').forEach(x=>x.onchange=()=>updateRow('tasks',x.dataset.rc,{completed:false}));
-document.querySelectorAll('.completed-delete').forEach(x=>x.onclick=()=>deleteRow('tasks',x.dataset.cid));
-}
-$('at').onclick=async()=>{let n=$('tn').value.trim();if(!n)return;await addRow('tasks',{title:n,task_type:$('tt').value,task_date:$('td').value,note:$('tnote').value.trim(),completed:false});$('tn').value='';$('tnote').value=''};
-$('tabs').onclick=e=>{if(!e.target||!e.target.dataset.f)return;F=e.target.dataset.f;document.querySelectorAll('#tabs .tab').forEach(x=>{if(x&&x.classList)x.classList.toggle('active',x===e.target)});renderT()};
-function renderE(){
-let a=[...D.events].sort((x,y)=>(String(x.event_date||'')+String(x.event_time||'')).localeCompare(String(y.event_date||'')+String(y.event_time||'')));
-let upcoming=a.filter(e=>!e.completed&&e.event_date>=now());
-$('eventCount').textContent=upcoming.length;
-$('el').innerHTML=a.length?a.map(e=>`<div class="event ${e.completed?'completed':''}">
-  <strong>${esc(e.title)}</strong>
-  <div class="meta"><span class="badge">${esc(e.event_type)}</span> ${nice(e.event_date)} ${e.event_time||''}</div>
-  ${e.note?`<div class="meta">${esc(e.note)}</div>`:''}
-  <div class="event-actions">
-    <label class="event-complete"><input class="event-check" type="checkbox" ${e.completed?'checked':''} data-eid="${e.id}"> Completed</label>
-    <button class="icon dele" data-id="${e.id}">Delete</button>
-  </div>
-</div>`).join(''):'<div class="empty">No events added yet. Add your first event above 📅</div>';
-document.querySelectorAll('.dele').forEach(x=>x.onclick=()=>deleteRow('calendar_events',x.dataset.id));
-document.querySelectorAll('.event-check').forEach(x=>x.onchange=()=>updateRow('calendar_events',x.dataset.eid,{completed:x.checked}))
-}
-$('ae').onclick=async()=>{let n=$('en').value.trim();if(!n)return;await addRow('calendar_events',{title:n,event_type:$('et').value,event_date:$('ed').value,event_time:$('etime').value||null,note:$('enote').value.trim(),completed:false});$('en').value='';$('etime').value='';$('enote').value='';$('et').value='Meeting';$('ed').value=now()};
-function renderR(){
-let a=[...D.reminders].sort((x,y)=>String(x.reminder_date||'').localeCompare(String(y.reminder_date||'')));
-$('remCount').textContent=a.filter(r=>!r.completed).length;
-$('rl').innerHTML=a.length?a.map(r=>`<div class="task ${r.completed?'done':''}">
-  <input class="check rem" type="checkbox" ${r.completed?'checked':''} data-id="${r.id}">
-  <div class="grow">
-    <div class="title">${esc(r.title)}</div>
-    <div class="meta"><span class="badge">${esc(r.category||'General')}</span> ${esc(r.repeat_type)} • ${nice(r.reminder_date)}${r.note?' • '+esc(r.note):''}</div>
-  </div>
-  <button class="icon delr" data-id="${r.id}">Delete</button>
-</div>`).join(''):'<div class="empty">No reminders yet. Add your first reminder above 🔔</div>';
-document.querySelectorAll('.delr').forEach(x=>x.onclick=()=>deleteRow('reminders',x.dataset.id));
-document.querySelectorAll('.rem').forEach(x=>x.onchange=()=>updateRow('reminders',x.dataset.id,{completed:x.checked}))
-}
-$('ar').onclick=async()=>{let n=$('rn').value.trim();if(!n)return;await addRow('reminders',{title:n,category:$('rc').value,repeat_type:$('rr').value,reminder_date:$('rd').value,note:$('rnote').value.trim(),completed:false});$('rn').value='';$('rnote').value='';$('rc').value='General';$('rr').value='Once';$('rd').value=now()};
-function renderX(){
-let income=D.expenses.filter(x=>(x.transaction_type||'Money Out')==='Money In').reduce((s,x)=>s+Number(x.amount||0),0);
-let outflow=D.expenses.filter(x=>(x.transaction_type||'Money Out')==='Money Out').reduce((s,x)=>s+Number(x.amount||0),0);
-$('xin').textContent=money(income);
-$('xout').textContent=money(outflow);
-let balance=income-outflow;
-  $('xbal').textContent=money(balance);
-$('xcount').textContent=D.expenses.length;
-let a=[...D.expenses].sort((x,y)=>String(y.expense_date||'').localeCompare(String(x.expense_date||'')));
-$('xl').innerHTML=a.length?a.map(x=>{
-  let kind=x.transaction_type||'Money Out';
-  let incoming=kind==='Money In';
-  return `<div class="transaction">
-    <div>
-      <div class="transaction-title">${esc(x.name)}</div>
-      <div class="transaction-meta">${esc(x.category||'General')} • ${nice(x.expense_date)}</div>
-      ${x.note?`<div class="transaction-note">${esc(x.note)}</div>`:''}
-    </div>
-    <div><span class="badge">${kind}</span></div>
-    <div class="${incoming?'in-money':'out-money'}">${incoming?'+':'−'}${money(x.amount)}</div>
-    <div>${incoming?'Received':'Spent'}</div>
-    <button class="icon delx" data-id="${x.id}">Delete</button>
-  </div>`
-}).join(''):'<div class="empty">No money records yet. Add your first transaction above 💰</div>';
-document.querySelectorAll('.delx').forEach(b=>b.onclick=()=>deleteRow('expenses',b.dataset.id))
-}
-$('ax').onclick=async()=>{let n=$('xn').value.trim(),a=Number($('xa').value);if(!n||!a)return;await addRow('expenses',{name:n,category:$('xc').value.trim(),amount:a,expense_date:$('xd').value,transaction_type:$('xkind').value,note:$('xnote').value.trim()});['xn','xc','xa','xnote'].forEach(x=>$(x).value='');$('xkind').value='Money Out';$('xd').value=now()};
-function renderP(){$('pl').innerHTML=D.people.length?D.people.map(p=>`<div class="person"><b>${esc(p.name)}</b><div class="meta">${esc(p.role||'')}</div><div>${esc(p.phone||'')}</div><div class="money">${p.monthly_payment?money(p.monthly_payment)+'/month':''}</div><button class="icon delp" data-id="${p.id}">Delete</button></div>`).join(''):'<div class="empty">Add drivers, tailors, electricians, maids, vendors, etc.</div>';document.querySelectorAll('.delp').forEach(b=>b.onclick=()=>deleteRow('staff',b.dataset.id))}
-$('ap').onclick=async()=>{let n=$('pn').value.trim();if(!n)return;await addRow('staff',{name:n,role:$('pr').value.trim(),phone:$('pp').value.trim(),monthly_payment:Number($('pay').value)||0});['pn','pr','pp','pay'].forEach(x=>$(x).value='')};
-function dash(){
-let p=D.tasks.filter(t=>!t.completed).length,
-t=D.tasks.filter(t=>!t.completed&&t.task_date===now()).length,
-e=D.events.filter(x=>!x.completed&&x.event_date>=now()).length,
-c=D.tasks.filter(t=>t.completed&&t.task_date===now()).length,
-x=D.expenses.filter(x=>x.expense_date.slice(0,7)===now().slice(0,7)&&(x.transaction_type||'Money Out')==='Money Out').reduce((s,a)=>s+Number(a.amount),0);
-$('sp').textContent=p;$('st').textContent=t;$('se').textContent=e;$('sc').textContent=c;$('sx').textContent=money(x);
-let a=D.tasks.filter(t=>!t.completed&&t.task_date===now()).slice(0,6);
-$('dt').innerHTML=a.length?a.map(t=>`<div class="task"><input class="check dashc" type="checkbox" data-id="${t.id}"><div class="grow"><div class="title">${esc(t.title)}</div><div class="meta">${esc(t.task_type)}</div></div></div>`).join(''):'<div class="empty">No tasks today 🎉</div>';
-document.querySelectorAll('.dashc').forEach(b=>b.onchange=()=>updateRow('tasks',b.dataset.id,{completed:true}));
-let ev=D.events.filter(x=>!x.completed&&x.event_date>=now()).sort((a,b)=>(a.event_date+a.event_time).localeCompare(b.event_date+b.event_time)).slice(0,5);
-$('de').innerHTML=ev.length?ev.map(e=>`<div class="event"><strong>${esc(e.title)}</strong><div class="meta">${nice(e.event_date)} ${e.event_time||''} • ${esc(e.event_type)}</div></div>`).join(''):'<div class="empty">No upcoming events.</div>'
 }
 function render(){renderT();renderE();renderR();renderX();renderP();dash()}
 function syncMobileMenuVisibility(){

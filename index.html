@@ -1,43 +1,129 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My PA Control Center</title><style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f6fa;color:#20232a}.app{display:flex;min-height:100vh}.side{width:220px;background:#20222a;color:white;padding:18px 12px}.brand{font-size:19px;font-weight:bold;padding:10px;margin-bottom:15px}.nav button{display:block;width:100%;border:0;background:none;color:#c9ccd5;text-align:left;padding:12px;border-radius:9px;margin:3px 0;cursor:pointer}.nav button.active,.nav button:hover{background:#353844;color:white}.main{flex:1;padding:24px;max-width:1400px}.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}h1{margin:0 0 5px;font-size:28px}.muted{color:#737b88;font-size:13px}.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}.card{background:white;border:1px solid #e4e7ec;border-radius:14px;padding:16px;margin-bottom:16px}.stat b{display:block;font-size:26px;margin-top:6px}.form{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px}input,select,button{font:inherit;padding:11px;border:1px solid #d7dbe3;border-radius:9px}button{background:#22252d;color:white;border-color:#22252d;cursor:pointer;font-weight:bold}.secondary,.icon{background:white;color:#333}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tab{background:#eef0f4;color:#333;border:0}.tab.active{background:#222;color:white}.task{display:flex;gap:10px;align-items:flex-start;padding:12px 3px;border-bottom:1px solid #eee}.check{width:21px;height:21px;accent-color:#222}.grow{flex:1;min-width:0}.title{font-weight:bold;word-break:break-word}.done .title{text-decoration:line-through;color:#999}.meta{font-size:12px;color:#7b8290;margin-top:4px}.actions{display:flex;gap:5px}.icon{padding:7px 9px}.danger{color:#b42318}.two{display:grid;grid-template-columns:1.2fr .8fr;gap:15px}.sectionhead{display:flex;justify-content:space-between;align-items:center}.sectionhead h2{font-size:18px;margin:0 0 10px}.empty{text-align:center;color:#8a919e;padding:28px}.event{padding:11px 2px;border-bottom:1px solid #eee}.event strong{display:block}.badge{font-size:11px;background:#eef0f4;padding:4px 7px;border-radius:20px}.expense{display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:8px;padding:11px 2px;border-bottom:1px solid #eee}.people{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.person{border:1px solid #e3e6eb;border-radius:11px;padding:12px}.person b{display:block;margin-bottom:5px}.money{font-weight:bold}@media(max-width:900px){.side{width:70px}.brand{font-size:0;text-align:center}.brand:after{content:'✓';font-size:22px}.nav button{font-size:0;text-align:center}.nav button:after{content:'•';font-size:18px}.main{padding:15px}.grid{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.people{grid-template-columns:1fr 1fr}}@media(max-width:650px){.form{grid-template-columns:1fr 1fr}.form input:first-child{grid-column:1/-1}.form button{grid-column:1/-1}.expense{grid-template-columns:1fr 1fr}.top h1{font-size:22px}}
+/* Mobile layout: full-width content + slide-out menu */
+.mobile-menu,.close-menu,.mobile-overlay{display:none}
 @media(max-width:650px){
   #logout{display:none}
+  .app{min-height:100vh}
   .side{
-    width:175px;
-    min-width:175px;
-    padding:14px 9px;
-    position:sticky;
+    position:fixed;
+    z-index:10001;
+    left:0;
     top:0;
+    width:245px;
+    min-width:245px;
     height:100vh;
+    padding:16px 12px;
     overflow-y:auto;
-    flex-shrink:0
+    transform:translateX(-100%);
+    transition:transform .22s ease;
+    box-shadow:8px 0 24px rgba(0,0,0,.18)
   }
+  .side.open{transform:translateX(0)}
   .brand{
-    font-size:16px;
+    font-size:17px;
     text-align:left;
-    padding:10px 8px;
-    white-space:nowrap
+    padding:10px 8px 18px;
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    justify-content:space-between
   }
   .brand:after{content:none}
+  .close-menu{
+    display:block;
+    background:transparent;
+    border:0;
+    color:#fff;
+    font-size:28px;
+    line-height:1;
+    padding:2px 7px
+  }
   .nav button{
-    font-size:12px;
+    font-size:14px;
     text-align:left;
-    padding:11px 9px;
+    padding:13px 12px;
     white-space:normal;
     line-height:1.25
   }
   .nav button:after{content:none}
+  .mobile-menu{
+    display:block;
+    position:fixed;
+    z-index:10000;
+    left:12px;
+    top:76px;
+    width:44px;
+    height:44px;
+    padding:0;
+    border-radius:12px;
+    font-size:23px;
+    box-shadow:0 3px 12px rgba(0,0,0,.15)
+  }
+  .mobile-overlay{
+    position:fixed;
+    inset:0;
+    z-index:10000;
+    background:rgba(0,0,0,.38)
+  }
+  .mobile-overlay.show{display:block}
   .main{
+    width:100%;
     min-width:0;
-    padding:12px
+    padding:18px 12px 28px
   }
   .top{
-    gap:8px;
-    align-items:flex-start
+    gap:10px;
+    align-items:center;
+    padding-left:58px
   }
   .top h1{font-size:22px}
+  .top .muted{line-height:1.35}
+  .grid{grid-template-columns:1fr 1fr;gap:10px}
+  .card{padding:14px;border-radius:14px}
+  .form{grid-template-columns:1fr;gap:9px}
+  .form input:first-child{grid-column:auto}
+  .form button{grid-column:auto;width:100%}
+  .task{
+    display:grid;
+    grid-template-columns:24px minmax(0,1fr);
+    gap:9px;
+    align-items:start;
+    padding:14px 2px
+  }
+  .task > .check{grid-column:1}
+  .task > .grow{grid-column:2;min-width:0}
+  .task > .actions{
+    grid-column:2;
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    width:100%;
+    margin-top:2px
+  }
+  .task > .actions .icon{flex:0 0 auto}
+  .title{
+    font-size:16px;
+    line-height:1.35;
+    overflow-wrap:anywhere;
+    word-break:normal
+  }
+  .meta{line-height:1.45;overflow-wrap:anywhere}
+  .tabs{gap:7px}
+  .tab{padding:10px 12px}
+  .event{padding:13px 2px}
+  .expense{grid-template-columns:1fr 1fr;gap:9px}
+  .expense button{grid-column:2;justify-self:end}
+  .people{grid-template-columns:1fr}
+  #quick{font-size:13px;padding:10px}
 }
-</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><aside class="side"><div class="brand">PA Control Center</div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
+@media(max-width:390px){
+  .grid{grid-template-columns:1fr}
+  .top{padding-left:55px}
+  .top h1{font-size:20px}
+  .tabs .tab{flex:1 1 calc(50% - 7px)}
+}
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
 <section id="dashboard" class="page active"><div class="grid"><div class="card stat"><span>Pending Tasks</span><b id="sp">0</b></div><div class="card stat"><span>Today's Tasks</span><b id="st">0</b></div><div class="card stat"><span>Upcoming Events</span><b id="se">0</b></div><div class="card stat"><span>This Month</span><b id="sx">₹0</b></div></div><div class="two"><div class="card"><div class="sectionhead"><h2>Today's Work</h2><button class="secondary" data-go="tasks">All tasks</button></div><div id="dt"></div></div><div class="card"><div class="sectionhead"><h2>Upcoming</h2><button class="secondary" data-go="calendar">Calendar</button></div><div id="de"></div></div></div></section>
 <section id="tasks" class="page"><div class="card"><h2>Add Task / Mini Task</h2><div class="form"><input id="tn" placeholder="Task e.g. Call electrician"><select id="tt"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>One-time</option></select><input id="td" type="date"><input id="tnote" placeholder="Mini task / note"><button id="at">Add</button></div></div><div class="card"><div class="tabs" id="tabs"><button class="tab active" data-f="all">Active</button><button class="tab" data-f="today">Today</button><button class="tab" data-f="Daily">Daily</button><button class="tab" data-f="Weekly">Weekly</button><button class="tab" data-f="Monthly">Monthly</button><button class="tab" data-f="done">Completed</button></div><div id="tl"></div></div></section>
 <section id="calendar" class="page"><div class="card"><h2>Add Calendar Event</h2><div class="form"><input id="en" placeholder="Meeting / event / appointment"><select id="et"><option>Meeting</option><option>Event</option><option>Appointment</option><option>Personal</option></select><input id="ed" type="date"><input id="etime" type="time"><button id="ae">Add</button></div></div><div class="card"><h2>Calendar / Events</h2><div id="el"></div></div></section>
@@ -59,6 +145,13 @@ async function authLogin(){let email=$('authEmail').value.trim(),password=$('aut
 async function authSignup(){let email=$('authEmail').value.trim(),password=$('authPass').value;if(!email||!password){msg('Enter an email and password.');return}if(password.length<6){msg('Password must be at least 6 characters.');return}msg('Creating account...',true);try{let r=await Promise.race([supabaseClient.auth.signUp({email,password}),new Promise((_,rej)=>setTimeout(()=>rej(new Error('Connection timed out. Please refresh and try again.')),15000))]);if(r.error){msg(r.error.message);return}if(r.data.session){msg('Account created. Signing you in...',true);await startApp()}else msg('Account created. Check your email to confirm it, then sign in.',true)}catch(e){console.error('SIGNUP ERROR',e);msg(e.message||'Could not create account. Please try again.')}}
 $('loginBtn').onclick=authLogin;$('signupBtn').onclick=authSignup;$('authPass').addEventListener('keydown',e=>{if(e.key==='Enter')authLogin()});$('logout').onclick=async()=>{await supabaseClient.auth.signOut()};
 function go(p){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.p===p));const h=document.querySelector(`[data-p="${p}"]`);if(h&&$('heading'))$('heading').textContent=h.textContent}const navEl=$('nav');if(navEl)navEl.onclick=e=>{if(e.target.dataset.p)go(e.target.dataset.p)};document.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>go(x.dataset.go));const quickEl=$('quick');if(quickEl)quickEl.onclick=()=>{go('tasks');const tn=$('tn');if(tn)tn.focus()};
+const mobileMenu=$('mobileMenu'),sideBar=$('sideBar'),closeMenu=$('closeMenu'),mobileOverlay=$('mobileOverlay');
+function closeMobileMenu(){if(sideBar)sideBar.classList.remove('open');if(mobileOverlay)mobileOverlay.classList.remove('show')}
+if(mobileMenu)mobileMenu.onclick=()=>{sideBar.classList.add('open');mobileOverlay.classList.add('show')};
+if(closeMenu)closeMenu.onclick=closeMobileMenu;
+if(mobileOverlay)mobileOverlay.onclick=closeMobileMenu;
+if(navEl)navEl.addEventListener('click',e=>{if(e.target.dataset.p)closeMobileMenu()});
+
 async function query(table){const {data,error}=await supabaseClient.from(table).select('*').eq('user_id',USER.id);if(error)throw error;return data||[]}
 async function loadAll(){status('Syncing…');try{const [tasks,mini_tasks,events,reminders,expenses,people,notes]=await Promise.all([query('tasks'),query('mini_tasks'),query('calendar_events'),query('reminders'),query('expenses'),query('staff'),query('quick_notes')]);D={tasks,mini_tasks,events,reminders,expenses,people,notes};render();status('✓ Synced')}catch(e){console.error(e);status('Sync error');alert('Could not load cloud data: '+e.message)}}
 async function addRow(table,row){const {error}=await supabaseClient.from(table).insert({...row,user_id:USER.id});if(error){alert(error.message);throw error}await loadAll()}

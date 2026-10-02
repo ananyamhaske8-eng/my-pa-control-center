@@ -48,9 +48,11 @@
   }
   .nav button:after{content:none}
   .mobile-menu{
-    display:block;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     position:fixed;
-    z-index:10000;
+    z-index:10002;
     left:12px;
     top:76px;
     width:44px;
@@ -58,7 +60,11 @@
     padding:0;
     border-radius:12px;
     font-size:23px;
-    box-shadow:0 3px 12px rgba(0,0,0,.15)
+    line-height:1;
+    background:#22252d;
+    color:#fff;
+    border:0;
+    box-shadow:0 3px 12px rgba(0,0,0,.22)
   }
   .mobile-overlay{
     position:fixed;
@@ -173,6 +179,11 @@ function renderP(){$('pl').innerHTML=D.people.length?D.people.map(p=>`<div class
 $('ap').onclick=async()=>{let n=$('pn').value.trim();if(!n)return;await addRow('staff',{name:n,role:$('pr').value.trim(),phone:$('pp').value.trim(),monthly_payment:Number($('pay').value)||0});['pn','pr','pp','pay'].forEach(x=>$(x).value='')};
 function dash(){let p=D.tasks.filter(t=>!t.completed).length,t=D.tasks.filter(t=>!t.completed&&t.task_date===now()).length,e=D.events.filter(x=>x.event_date>=now()).length,x=D.expenses.filter(x=>x.expense_date.slice(0,7)===now().slice(0,7)).reduce((s,a)=>s+Number(a.amount),0);$('sp').textContent=p;$('st').textContent=t;$('se').textContent=e;$('sx').textContent=money(x);let a=D.tasks.filter(t=>!t.completed&&t.task_date===now()).slice(0,6);$('dt').innerHTML=a.length?a.map(t=>`<div class="task"><input class="check dashc" type="checkbox" data-id="${t.id}"><div class="grow"><div class="title">${esc(t.title)}</div><div class="meta">${esc(t.task_type)}</div></div></div>`).join(''):'<div class="empty">No tasks today 🎉</div>';document.querySelectorAll('.dashc').forEach(b=>b.onchange=()=>updateRow('tasks',b.dataset.id,{completed:true}));let ev=D.events.filter(x=>x.event_date>=now()).sort((a,b)=>(a.event_date+a.event_time).localeCompare(b.event_date+b.event_time)).slice(0,5);$('de').innerHTML=ev.length?ev.map(e=>`<div class="event"><strong>${esc(e.title)}</strong><div class="meta">${nice(e.event_date)} ${e.event_time||''} • ${esc(e.event_type)}</div></div>`).join(''):'<div class="empty">No upcoming events.</div>'}
 function render(){renderT();renderE();renderR();renderX();renderP();dash()}
-async function startApp(){try{await getUser();if(!USER){$('auth').style.display='flex';$('app').style.display='none';msg('Please sign in.');return}$('auth').style.display='none';$('app').style.display='flex';await loadAll()}catch(e){console.error('START APP ERROR',e);$('auth').style.display='flex';$('app').style.display='none';msg(e.message||'Could not connect to Supabase.')}}
+function syncMobileMenuVisibility(){
+  const menu=$('mobileMenu');
+  const app=$('app');
+  if(menu && app) menu.style.display = (app.style.display==='none') ? 'none' : '';
+}
+async function startApp(){try{await getUser();if(!USER){$('auth').style.display='flex';$('app').style.display='none';syncMobileMenuVisibility();msg('Please sign in.');return}$('auth').style.display='none';$('app').style.display='flex';syncMobileMenuVisibility();await loadAll()}catch(e){console.error('START APP ERROR',e);$('auth').style.display='flex';$('app').style.display='none';msg(e.message||'Could not connect to Supabase.')}}
 supabaseClient.auth.onAuthStateChange(()=>setTimeout(startApp,0));startApp();
 </script></body></html>

@@ -121,6 +121,11 @@
   .expense{grid-template-columns:1fr 1fr;gap:9px}
   #reminders .form button{width:100%}
   #calendar .form button{width:100%}
+  #expenses .form button{width:100%}
+  #expenses .money-stats{grid-template-columns:1fr}
+  .transaction{grid-template-columns:1fr 1fr;gap:8px}
+  .transaction button{justify-self:end}
+  .transaction .transaction-title{grid-column:1/-1}
   .event-actions{flex-wrap:wrap}
   .expense button{grid-column:2;justify-self:end}
   .people{grid-template-columns:1fr}
@@ -152,6 +157,15 @@
 .event-complete{font-size:12px}
 .event.completed{opacity:.65}
 .event.completed strong{text-decoration:line-through;color:#888}
+
+.money-stats{grid-template-columns:repeat(3,1fr)}
+.transaction{display:grid;grid-template-columns:minmax(0,1.6fr) 1fr 1fr 1fr auto;gap:10px;padding:12px 2px;border-bottom:1px solid #eee;align-items:center}
+.transaction:last-child{border-bottom:0}
+.transaction-title{font-weight:bold;overflow-wrap:anywhere}
+.transaction-meta{font-size:12px;color:#7b8290;margin-top:3px}
+.in-money{font-weight:bold}
+.out-money{font-weight:bold}
+.transaction-note{font-size:12px;color:#8a919e;margin-top:3px}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
 <section id="dashboard" class="page active"><div class="grid"><div class="card stat"><span>Pending Tasks</span><b id="sp">0</b></div><div class="card stat"><span>Today's Tasks</span><b id="st">0</b></div><div class="card stat"><span>Upcoming Events</span><b id="se">0</b></div><div class="card stat"><span>Completed Today</span><b id="sc">0</b></div><div class="card stat"><span>This Month</span><b id="sx">₹0</b></div></div><div class="two"><div class="card"><div class="sectionhead"><h2>Today's Work</h2><button class="secondary" data-go="tasks">All tasks</button></div><div id="dt"></div></div><div class="card"><div class="sectionhead"><h2>Upcoming</h2><button class="secondary" data-go="calendar">Calendar</button></div><div id="de"></div></div></div></section>
 <section id="tasks" class="page"><div class="card"><h2>Add Task / Mini Task</h2><div class="form"><input id="tn" placeholder="Task e.g. Call electrician"><select id="tt"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>One-time</option></select><input id="td" type="date"><input id="tnote" placeholder="Mini task / note"><button id="at">Add</button></div></div><div class="card"><div class="tabs" id="tabs"><button class="tab active" data-f="all">Active</button><button class="tab" data-f="today">Today</button><button class="tab" data-f="Daily">Daily</button><button class="tab" data-f="Weekly">Weekly</button><button class="tab" data-f="Monthly">Monthly</button><button class="tab" data-f="done">Completed</button></div><div id="tl"></div>
@@ -183,7 +197,30 @@
 </div>
 </section>
 <section id="reminders" class="page"><div class="card"><h2>Add Future Reminder</h2><p class="muted">Birthdays, anniversaries, bills, renewals, follow-ups, calls, and anything you don't want to forget.</p><div class="form"><input id="rn" placeholder="Reminder e.g. Electricity bill"><select id="rc"><option>General</option><option>Birthday</option><option>Anniversary</option><option>Bill</option><option>Renewal</option><option>Follow-up</option><option>Call</option></select><select id="rr"><option>Once</option><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select><input id="rd" type="date"><input id="rnote" placeholder="Note / details"><button id="ar">Add Reminder</button></div></div><div class="card"><div class="sectionhead"><h2>My Reminders</h2><span id="remCount" class="badge">0</span></div><div id="rl"></div></div></section>
-<section id="expenses" class="page"><div class="card"><h2>Household Expenses</h2><div class="form"><input id="xn" placeholder="Driver / Tailor / Electrician / Grocery"><input id="xc" placeholder="Category"><input id="xa" type="number" min="0" placeholder="Amount ₹"><input id="xd" type="date"><button id="ax">Add</button></div></div><div class="card"><div class="sectionhead"><h2>Expense Records</h2><b id="xt">₹0</b></div><div id="xl"></div></div></section>
+<section id="expenses" class="page">
+<div class="card">
+  <h2>Money Manager</h2>
+  <p class="muted">Keep a record of money received and money spent.</p>
+  <div class="form">
+    <input id="xn" placeholder="Description e.g. Salary / Grocery">
+    <select id="xkind"><option>Money Out</option><option>Money In</option></select>
+    <input id="xc" placeholder="Category e.g. Household / Salary">
+    <input id="xa" type="number" min="0" step="0.01" placeholder="Amount ₹">
+    <input id="xd" type="date">
+    <input id="xnote" placeholder="Note (optional)">
+    <button id="ax">Add Transaction</button>
+  </div>
+</div>
+<div class="grid money-stats">
+  <div class="card stat"><span>Total Money In</span><b id="xin">₹0</b></div>
+  <div class="card stat"><span>Total Money Out</span><b id="xout">₹0</b></div>
+  <div class="card stat"><span>Current Balance</span><b id="xbal">₹0</b></div>
+</div>
+<div class="card">
+  <div class="sectionhead"><h2>Transaction Records</h2><span id="xcount" class="badge">0</span></div>
+  <div id="xl"></div>
+</div>
+</section>
 <section id="people" class="page"><div class="card"><h2>Staff & Service Contacts</h2><div class="form"><input id="pn" placeholder="Name"><input id="pr" placeholder="Role / service"><input id="pp" placeholder="Phone"><input id="pay" type="number" placeholder="Monthly payment ₹"><button id="ap">Add</button></div></div><div class="card"><div class="people" id="pl"></div></div></section></main></div>
 <script>
 const SUPABASE_URL='https://kbeqxmjoedaiiybvbxyb.supabase.co';
@@ -297,8 +334,32 @@ document.querySelectorAll('.delr').forEach(x=>x.onclick=()=>deleteRow('reminders
 document.querySelectorAll('.rem').forEach(x=>x.onchange=()=>updateRow('reminders',x.dataset.id,{completed:x.checked}))
 }
 $('ar').onclick=async()=>{let n=$('rn').value.trim();if(!n)return;await addRow('reminders',{title:n,category:$('rc').value,repeat_type:$('rr').value,reminder_date:$('rd').value,note:$('rnote').value.trim(),completed:false});$('rn').value='';$('rnote').value='';$('rc').value='General';$('rr').value='Once';$('rd').value=now()};
-function renderX(){let total=D.expenses.filter(x=>x.expense_date.slice(0,7)===now().slice(0,7)).reduce((s,x)=>s+Number(x.amount),0);$('xt').textContent=money(total);let a=[...D.expenses].sort((a,b)=>b.expense_date.localeCompare(a.expense_date));$('xl').innerHTML=a.length?a.map(x=>`<div class="expense"><div><b>${esc(x.name)}</b><div class="meta">${esc(x.category||'')}</div></div><div>${nice(x.expense_date)}</div><div class="money">${money(x.amount)}</div><button class="icon delx" data-id="${x.id}">Delete</button></div>`).join(''):'<div class="empty">No expenses recorded.</div>';document.querySelectorAll('.delx').forEach(b=>b.onclick=()=>deleteRow('expenses',b.dataset.id))}
-$('ax').onclick=async()=>{let n=$('xn').value.trim(),a=Number($('xa').value);if(!n||!a)return;await addRow('expenses',{name:n,category:$('xc').value.trim(),amount:a,expense_date:$('xd').value});['xn','xc','xa'].forEach(x=>$(x).value='')};
+function renderX(){
+let income=D.expenses.filter(x=>(x.transaction_type||'Money Out')==='Money In').reduce((s,x)=>s+Number(x.amount||0),0);
+let outflow=D.expenses.filter(x=>(x.transaction_type||'Money Out')==='Money Out').reduce((s,x)=>s+Number(x.amount||0),0);
+$('xin').textContent=money(income);
+$('xout').textContent=money(outflow);
+$('xbal').textContent=money(income-outflow);
+$('xcount').textContent=D.expenses.length;
+let a=[...D.expenses].sort((x,y)=>String(y.expense_date||'').localeCompare(String(x.expense_date||'')));
+$('xl').innerHTML=a.length?a.map(x=>{
+  let kind=x.transaction_type||'Money Out';
+  let incoming=kind==='Money In';
+  return `<div class="transaction">
+    <div>
+      <div class="transaction-title">${esc(x.name)}</div>
+      <div class="transaction-meta">${esc(x.category||'General')} • ${nice(x.expense_date)}</div>
+      ${x.note?`<div class="transaction-note">${esc(x.note)}</div>`:''}
+    </div>
+    <div><span class="badge">${kind}</span></div>
+    <div class="${incoming?'in-money':'out-money'}">${incoming?'+':'−'}${money(x.amount)}</div>
+    <div>${incoming?'Received':'Spent'}</div>
+    <button class="icon delx" data-id="${x.id}">Delete</button>
+  </div>`
+}).join(''):'<div class="empty">No money records yet. Add your first transaction above 💰</div>';
+document.querySelectorAll('.delx').forEach(b=>b.onclick=()=>deleteRow('expenses',b.dataset.id))
+}
+$('ax').onclick=async()=>{let n=$('xn').value.trim(),a=Number($('xa').value);if(!n||!a)return;await addRow('expenses',{name:n,category:$('xc').value.trim(),amount:a,expense_date:$('xd').value,transaction_type:$('xkind').value,note:$('xnote').value.trim()});['xn','xc','xa','xnote'].forEach(x=>$(x).value='');$('xkind').value='Money Out';$('xd').value=now()};
 function renderP(){$('pl').innerHTML=D.people.length?D.people.map(p=>`<div class="person"><b>${esc(p.name)}</b><div class="meta">${esc(p.role||'')}</div><div>${esc(p.phone||'')}</div><div class="money">${p.monthly_payment?money(p.monthly_payment)+'/month':''}</div><button class="icon delp" data-id="${p.id}">Delete</button></div>`).join(''):'<div class="empty">Add drivers, tailors, electricians, maids, vendors, etc.</div>';document.querySelectorAll('.delp').forEach(b=>b.onclick=()=>deleteRow('staff',b.dataset.id))}
 $('ap').onclick=async()=>{let n=$('pn').value.trim();if(!n)return;await addRow('staff',{name:n,role:$('pr').value.trim(),phone:$('pp').value.trim(),monthly_payment:Number($('pay').value)||0});['pn','pr','pp','pay'].forEach(x=>$(x).value='')};
 function dash(){
@@ -306,7 +367,7 @@ let p=D.tasks.filter(t=>!t.completed).length,
 t=D.tasks.filter(t=>!t.completed&&t.task_date===now()).length,
 e=D.events.filter(x=>!x.completed&&x.event_date>=now()).length,
 c=D.tasks.filter(t=>t.completed&&t.task_date===now()).length,
-x=D.expenses.filter(x=>x.expense_date.slice(0,7)===now().slice(0,7)).reduce((s,a)=>s+Number(a.amount),0);
+x=D.expenses.filter(x=>x.expense_date.slice(0,7)===now().slice(0,7)&&(x.transaction_type||'Money Out')==='Money Out').reduce((s,a)=>s+Number(a.amount),0);
 $('sp').textContent=p;$('st').textContent=t;$('se').textContent=e;$('sc').textContent=c;$('sx').textContent=money(x);
 let a=D.tasks.filter(t=>!t.completed&&t.task_date===now()).slice(0,6);
 $('dt').innerHTML=a.length?a.map(t=>`<div class="task"><input class="check dashc" type="checkbox" data-id="${t.id}"><div class="grow"><div class="title">${esc(t.title)}</div><div class="meta">${esc(t.task_type)}</div></div></div>`).join(''):'<div class="empty">No tasks today 🎉</div>';

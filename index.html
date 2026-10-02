@@ -1,6 +1,42 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My PA Control Center</title><style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f6fa;color:#20232a}.app{display:flex;min-height:100vh}.side{width:220px;background:#20222a;color:white;padding:18px 12px}.brand{font-size:19px;font-weight:bold;padding:10px;margin-bottom:15px}.nav button{display:block;width:100%;border:0;background:none;color:#c9ccd5;text-align:left;padding:12px;border-radius:9px;margin:3px 0;cursor:pointer}.nav button.active,.nav button:hover{background:#353844;color:white}.main{flex:1;padding:24px;max-width:1400px}.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}h1{margin:0 0 5px;font-size:28px}.muted{color:#737b88;font-size:13px}.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}.card{background:white;border:1px solid #e4e7ec;border-radius:14px;padding:16px;margin-bottom:16px}.stat b{display:block;font-size:26px;margin-top:6px}.form{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px}input,select,button{font:inherit;padding:11px;border:1px solid #d7dbe3;border-radius:9px}button{background:#22252d;color:white;border-color:#22252d;cursor:pointer;font-weight:bold}.secondary,.icon{background:white;color:#333}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tab{background:#eef0f4;color:#333;border:0}.tab.active{background:#222;color:white}.task{display:flex;gap:10px;align-items:flex-start;padding:12px 3px;border-bottom:1px solid #eee}.check{width:21px;height:21px;accent-color:#222}.grow{flex:1;min-width:0}.title{font-weight:bold;word-break:break-word}.done .title{text-decoration:line-through;color:#999}.meta{font-size:12px;color:#7b8290;margin-top:4px}.actions{display:flex;gap:5px}.icon{padding:7px 9px}.danger{color:#b42318}.two{display:grid;grid-template-columns:1.2fr .8fr;gap:15px}.sectionhead{display:flex;justify-content:space-between;align-items:center}.sectionhead h2{font-size:18px;margin:0 0 10px}.empty{text-align:center;color:#8a919e;padding:28px}.event{padding:11px 2px;border-bottom:1px solid #eee}.event strong{display:block}.badge{font-size:11px;background:#eef0f4;padding:4px 7px;border-radius:20px}.expense{display:grid;grid-template-columns:1.5fr 1fr 1fr auto;gap:8px;padding:11px 2px;border-bottom:1px solid #eee}.people{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.person{border:1px solid #e3e6eb;border-radius:11px;padding:12px}.person b{display:block;margin-bottom:5px}.money{font-weight:bold}@media(max-width:900px){.side{width:70px}.brand{font-size:0;text-align:center}.brand:after{content:'✓';font-size:22px}.nav button{font-size:0;text-align:center}.nav button:after{content:'•';font-size:18px}.main{padding:15px}.grid{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.people{grid-template-columns:1fr 1fr}}@media(max-width:650px){.form{grid-template-columns:1fr 1fr}.form input:first-child{grid-column:1/-1}.form button{grid-column:1/-1}.expense{grid-template-columns:1fr 1fr}.top h1{font-size:22px}}
-@media(max-width:650px){#logout{display:none}}
+@media(max-width:650px){
+  #logout{display:none}
+  .side{
+    width:175px;
+    min-width:175px;
+    padding:14px 9px;
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+    flex-shrink:0
+  }
+  .brand{
+    font-size:16px;
+    text-align:left;
+    padding:10px 8px;
+    white-space:nowrap
+  }
+  .brand:after{content:none}
+  .nav button{
+    font-size:12px;
+    text-align:left;
+    padding:11px 9px;
+    white-space:normal;
+    line-height:1.25
+  }
+  .nav button:after{content:none}
+  .main{
+    min-width:0;
+    padding:12px
+  }
+  .top{
+    gap:8px;
+    align-items:flex-start
+  }
+  .top h1{font-size:22px}
+}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><aside class="side"><div class="brand">PA Control Center</div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center"><span id="syncStatus" class="muted">Cloud sync</span><button id="quick">+ Quick Task</button><button id="logout" class="secondary">Log out</button></div></div>
 <section id="dashboard" class="page active"><div class="grid"><div class="card stat"><span>Pending Tasks</span><b id="sp">0</b></div><div class="card stat"><span>Today's Tasks</span><b id="st">0</b></div><div class="card stat"><span>Upcoming Events</span><b id="se">0</b></div><div class="card stat"><span>This Month</span><b id="sx">₹0</b></div></div><div class="two"><div class="card"><div class="sectionhead"><h2>Today's Work</h2><button class="secondary" data-go="tasks">All tasks</button></div><div id="dt"></div></div><div class="card"><div class="sectionhead"><h2>Upcoming</h2><button class="secondary" data-go="calendar">Calendar</button></div><div id="de"></div></div></div></section>
 <section id="tasks" class="page"><div class="card"><h2>Add Task / Mini Task</h2><div class="form"><input id="tn" placeholder="Task e.g. Call electrician"><select id="tt"><option>Daily</option><option>Weekly</option><option>Monthly</option><option>One-time</option></select><input id="td" type="date"><input id="tnote" placeholder="Mini task / note"><button id="at">Add</button></div></div><div class="card"><div class="tabs" id="tabs"><button class="tab active" data-f="all">Active</button><button class="tab" data-f="today">Today</button><button class="tab" data-f="Daily">Daily</button><button class="tab" data-f="Weekly">Weekly</button><button class="tab" data-f="Monthly">Monthly</button><button class="tab" data-f="done">Completed</button></div><div id="tl"></div></div></section>

@@ -542,6 +542,54 @@
   <div id="xl"></div>
 </div>
 </section>
+
+<section id="mandir" class="page">
+  <div class="page-head">
+    <div>
+      <h1>🛕 Mandir Accounts</h1>
+      <p>Keep Mandir income and expenses completely separate from household money.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card stat"><span>Mandir Received</span><b id="min">₹0</b></div>
+    <div class="card stat"><span>Mandir Spent</span><b id="mout">₹0</b></div>
+    <div class="card stat"><span>Mandir Balance</span><b id="mbal">₹0</b></div>
+    <div class="card stat"><span>Transactions</span><b id="mcount">0</b></div>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="card">
+      <div class="sectionhead"><h2>Add Mandir Transaction</h2></div>
+      <div class="form-grid">
+        <input id="mn" placeholder="Description e.g. Flowers, Prasad, Donation">
+        <select id="mk">
+          <option>Money Out</option>
+          <option>Money In</option>
+        </select>
+        <select id="mc">
+          <option>Mandir • Puja</option>
+          <option>Mandir • Flowers</option>
+          <option>Mandir • Prasad</option>
+          <option>Mandir • Maintenance</option>
+          <option>Mandir • Cleaning</option>
+          <option>Mandir • Donation</option>
+          <option>Mandir • Other</option>
+        </select>
+        <input id="ma" type="number" min="0" step="0.01" placeholder="Amount">
+        <input id="md" type="date">
+        <input id="mnote" placeholder="Note (optional)">
+        <button id="am">+ Add Mandir Transaction</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sectionhead"><h2>Mandir Transaction History</h2></div>
+      <div id="ml"></div>
+    </div>
+  </div>
+</section>
+
 <section id="people" class="page"><div class="card"><h2>Staff & Service Contacts</h2><div class="form"><input id="pn" placeholder="Name"><input id="pr" placeholder="Role / service"><input id="pp" placeholder="Phone"><input id="pay" type="number" placeholder="Monthly payment ₹"><button id="ap">Add</button></div></div><div class="card"><div class="people" id="pl"></div></div></section></main></div>
 <script>
 const SUPABASE_URL='https://kbeqxmjoedaiiybvbxyb.supabase.co';
@@ -775,6 +823,7 @@ document.querySelectorAll('.delx').forEach(b=>b.onclick=()=>deleteRow('expenses'
 $('ax').onclick=async()=>{let n=$('xn').value.trim(),a=Number($('xa').value);if(!n||!a)return;await addRow('expenses',{name:n,category:($('xc').value.trim()||'Household'),amount:a,expense_date:$('xd').value,transaction_type:$('xkind').value,note:$('xnote').value.trim()});['xn','xc','xa','xnote'].forEach(x=>$(x).value='');$('xkind').value='Money Out';$('xd').value=now()};
 
 function renderMandir(){
+  if(!$('min')||!$('mout')||!$('mbal')||!$('mcount')||!$('ml')) return;
   const a=D.expenses.filter(x=>String(x.category||'').startsWith('Mandir')).sort((x,y)=>String(y.expense_date||'').localeCompare(String(x.expense_date||'')));
   const inc=a.filter(x=>(x.transaction_type||'Money Out')==='Money In').reduce((s,x)=>s+Number(x.amount||0),0);
   const out=a.filter(x=>(x.transaction_type||'Money Out')==='Money Out').reduce((s,x)=>s+Number(x.amount||0),0);
@@ -801,6 +850,7 @@ $('am').onclick=async()=>{
   if(!a){alert('Please enter an amount.');$('ma').focus();return;}
   await addRow('expenses',{name:n,category:$('mc').value,amount:a,expense_date:$('md').value||now(),transaction_type:$('mk').value,note:$('mnote').value.trim()});
   $('mn').value='';$('ma').value='';$('mnote').value='';$('mk').value='Money Out';$('md').value=now();$('mc').value='Mandir • Puja';
+if($('md')&&!$('md').value)$('md').value=now();
 };
 
 function renderP(){$('pl').innerHTML=D.people.length?D.people.map(p=>`<div class="person"><b>${esc(p.name)}</b><div class="meta">${esc(p.role||'')}</div><div>${esc(p.phone||'')}</div><div class="money">${p.monthly_payment?money(p.monthly_payment)+'/month':''}</div><button class="icon delp" data-id="${p.id}">Delete</button></div>`).join(''):'<div class="empty">Add drivers, tailors, electricians, maids, vendors, etc.</div>';document.querySelectorAll('.delp').forEach(b=>b.onclick=()=>deleteRow('staff',b.dataset.id))}

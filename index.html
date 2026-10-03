@@ -330,47 +330,52 @@
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 function notificationTodayKey(){
   const d=new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
 function notificationStatusText(){
-  const el=document.getElementById('notification-status');
+  const el=document.getElementById("notification-status");
   if(!el) return;
-  if(!('Notification' in window)){el.textContent='This browser does not support notifications.';return;}
-  if(Notification.permission==='granted') el.textContent='Notifications are enabled on this device.';
-  else if(Notification.permission==='denied') el.textContent='Notifications are blocked. Allow them in your browser settings.';
-  else el.textContent='Notifications are not enabled yet.';
+  if(!("Notification" in window)){el.textContent="This browser does not support notifications.";return;}
+  if(Notification.permission==="granted") el.textContent="Notifications are enabled on this device.";
+  else if(Notification.permission==="denied") el.textContent="Notifications are blocked. Allow them in browser settings.";
+  else el.textContent="Notifications are not enabled yet.";
 }
 async function enableNotifications(){
-  if(!('Notification' in window)){alert('This browser does not support notifications.');return;}
-  const p=await Notification.requestPermission();
-  notificationStatusText();
-setInterval(checkReminderNotifications,60000);
-  if(p==='granted'){
-    new Notification('PA Control Center', {body:'Reminder notifications are now enabled 🔔'});
-    checkReminderNotifications();
+  if(!("Notification" in window)){alert("This browser does not support notifications.");return;}
+  try{
+    const p=await Notification.requestPermission();
+    notificationStatusText();
+    if(p==="granted"){
+      new Notification("PA Control Center",{body:"Reminder notifications are now enabled 🔔"});
+      if(typeof checkReminderNotifications==="function") checkReminderNotifications();
+    }
+  }catch(e){
+    alert("Notifications could not be enabled on this browser.");
   }
 }
-function reminderNotificationId(r){
-  return `pa-reminder-${r.id}-${r.date}`;
-}
 function checkReminderNotifications(){
-  if(!USER || !('Notification' in window) || Notification.permission!=='granted') return;
+  if(typeof USER==="undefined" || !USER || !("Notification" in window) || Notification.permission!=="granted") return;
   const today=notificationTodayKey();
-  const reminders=D.reminders||[];
-  const seen=JSON.parse(localStorage.getItem('pa_notified_reminders_v1')||'{}');
+  const reminders=(typeof D!=="undefined" && D.reminders)?D.reminders:[];
+  let seen={};
+  try{seen=JSON.parse(localStorage.getItem("pa_notified_reminders_v1")||"{}")||{};}catch(e){}
   reminders.forEach(r=>{
     if(r.completed || !r.date || r.date!==today) return;
-    const key=reminderNotificationId(r);
+    const key="pa-reminder-"+r.id+"-"+r.date;
     if(seen[key]) return;
-    new Notification(`🔔 ${r.title||'Reminder'}`, {
-      body: `${r.category||'General'} reminder for today.`,
-      tag:key
-    });
-    seen[key]=Date.now();
+    try{
+      new Notification("🔔 "+(r.title||"Reminder"),{
+        body:(r.category||"General")+" reminder for today.",
+        tag:key
+      });
+      seen[key]=Date.now();
+    }catch(e){}
   });
-  localStorage.setItem('pa_notified_reminders_v1',JSON.stringify(seen));
+  try{localStorage.setItem("pa_notified_reminders_v1",JSON.stringify(seen));}catch(e){}
 }
-notificationStatusText();
+
+setTimeout(function(){notificationStatusText();},100);
+setInterval(function(){checkReminderNotifications();},60000);
 </script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="myday">☀️ My Day</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">🏠 House Expenses</button><button data-p="mandir">🛕 Mandir Accounts</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex:1">
 <div class="search-wrap">
 <input id="globalSearch" type="search" placeholder="🔎 Search tasks, reminders, events, money, staff…" autocomplete="off">
@@ -700,8 +705,7 @@ if(mobileOverlay)mobileOverlay.onclick=closeMobileMenu;
 if(navEl)navEl.addEventListener('click',e=>{if(e.target.dataset.p)closeMobileMenu()});
 
 async function query(table){const {data,error}=await supabaseClient.from(table).select('*').eq('user_id',USER.id);if(error)throw error;return data||[]}
-async function loadAll(){status('Syncing…');try{const [tasks,mini_tasks,events,reminders,expenses,people,notes]=await Promise.all([query('tasks'),query('mini_tasks'),query('calendar_events'),query('reminders'),query('expenses'),query('staff'),query('quick_notes')]);D={tasks,mini_tasks,events,reminders,expenses,people,notes};render();
-checkReminderNotifications();status('✓ Synced')}catch(e){console.error(e);status('Sync error');alert('Could not load cloud data: '+e.message)}}
+async function loadAll(){status('Syncing…');try{const [tasks,mini_tasks,events,reminders,expenses,people,notes]=await Promise.all([query('tasks'),query('mini_tasks'),query('calendar_events'),query('reminders'),query('expenses'),query('staff'),query('quick_notes')]);D={tasks,mini_tasks,events,reminders,expenses,people,notes};render();status('✓ Synced')}catch(e){console.error(e);status('Sync error');alert('Could not load cloud data: '+e.message)}}
 async function addRow(table,row){const {error}=await supabaseClient.from(table).insert({...row,user_id:USER.id});if(error){alert(error.message);throw error}await loadAll()}
 async function updateRow(table,id,patch){const {error}=await supabaseClient.from(table).update(patch).eq('id',id).eq('user_id',USER.id);if(error){alert(error.message);throw error}await loadAll()}
 async function deleteRow(table,id){if(!confirm('Delete this item?'))return;const {error}=await supabaseClient.from(table).delete().eq('id',id).eq('user_id',USER.id);if(error){alert(error.message);return}await loadAll()}

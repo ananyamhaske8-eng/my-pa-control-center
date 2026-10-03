@@ -372,7 +372,6 @@ async function enableNotifications(){
     const reg=await navigator.serviceWorker.ready;
     await reg.showNotification("PA Control Center",{
       body:"✅ Notifications are working on this phone!",
-      icon:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔔</text></svg>',
       tag:"pa-test-notification"
     });
     notificationStatusText();

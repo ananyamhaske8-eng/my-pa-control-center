@@ -7,29 +7,23 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("push", event => {
-  let data = {
-    title: "PA Control Center 🔔",
-    body: "You have a new reminder."
-  };
+  let title = "PA Control Center 🔔";
+  let body = "You have a new reminder.";
 
-  try {
-    if (event.data) {
-      const incoming = event.data.json();
-      data = {
-        ...data,
-        ...incoming
-      };
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      title = data.title || title;
+      body = data.body || body;
+    } catch (e) {
+      console.log("Could not read push data:", e);
     }
-  } catch (e) {
-    console.log("Push data parsing failed:", e);
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      tag: data.tag || "pa-reminder",
-      icon: "./icon-192.png",
-      badge: "./icon-192.png"
+    self.registration.showNotification(title, {
+      body: body,
+      tag: "pa-reminder"
     })
   );
 });
@@ -42,13 +36,11 @@ self.addEventListener("notificationclick", event => {
       type: "window",
       includeUncontrolled: true
     }).then(list => {
-      for (const client of list) {
-        if ("focus" in client) return client.focus();
+      if (list.length > 0) {
+        return list[0].focus();
       }
 
-      if (clients.openWindow) {
-        return clients.openWindow("./");
-      }
+      return clients.openWindow("./");
     })
   );
 });

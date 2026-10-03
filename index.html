@@ -737,7 +737,7 @@ $('ar').onclick=async()=>{
   if(!USER){alert('Please sign in first.');return;}
   btn.disabled=true; const old=btn.textContent; btn.textContent='Adding…';
   try{
-    await addRow('reminders',{title:n,category:$('rc').value,repeat_type:$('rr').value,reminder_date:date,note:$('rnote').value.trim(),completed:false});
+    await addRow('reminders',{title:n,category:($('rc')?.value || 'General'),repeat_type:$('rr').value,reminder_date:date,note:$('rnote').value.trim(),completed:false});
     $('rn').value='';$('rnote').value='';$('rc').value='General';$('rr').value='Once';$('rd').value=now();
   }catch(e){console.error('REMINDER ADD ERROR',e);}
   finally{btn.disabled=false;btn.textContent=old;}

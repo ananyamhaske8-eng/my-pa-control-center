@@ -746,14 +746,15 @@ $('ar').onclick=async()=>{
   finally{btn.disabled=false;btn.textContent=old;}
 };
 function renderX(){
-let income=D.expenses.filter(x=>(x.transaction_type||'Money Out')==='Money In').reduce((s,x)=>s+Number(x.amount||0),0);
+const house=D.expenses.filter(x=>!String(x.category||'').toLowerCase().startsWith('mandir'));
+let income=house.filter(x=>(x.transaction_type||'Money Out')==='Money In').reduce((s,x)=>s+Number(x.amount||0),0);
 let outflow=house.filter(x=>(x.transaction_type||'Money Out')==='Money Out').reduce((s,x)=>s+Number(x.amount||0),0);
 $('xin').textContent=money(income);
 $('xout').textContent=money(outflow);
 let balance=income-outflow;
-  $('xbal').textContent=money(balance);
-$('xcount').textContent=D.expenses.length;
-let a=[...D.expenses].sort((x,y)=>String(y.expense_date||'').localeCompare(String(x.expense_date||'')));
+$('xbal').textContent=money(balance);
+$('xcount').textContent=house.length;
+let a=[...house].sort((x,y)=>String(y.expense_date||'').localeCompare(String(x.expense_date||'')));
 $('xl').innerHTML=a.length?a.map(x=>{
   let kind=x.transaction_type||'Money Out';
   let incoming=kind==='Money In';

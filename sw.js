@@ -1,8 +1,38 @@
-self.addEventListener("install", event => self.skipWaiting());
+self.addEventListener("install", event => {
+  self.skipWaiting();
+});
 
-self.addEventListener("activate", event =>
-  event.waitUntil(self.clients.claim())
-);
+self.addEventListener("activate", event => {
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener("push", event => {
+  let data = {
+    title: "PA Control Center 🔔",
+    body: "You have a new reminder."
+  };
+
+  try {
+    if (event.data) {
+      const incoming = event.data.json();
+      data = {
+        ...data,
+        ...incoming
+      };
+    }
+  } catch (e) {
+    console.log("Push data parsing failed:", e);
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      tag: data.tag || "pa-reminder",
+      icon: "./icon-192.png",
+      badge: "./icon-192.png"
+    })
+  );
+});
 
 self.addEventListener("notificationclick", event => {
   event.notification.close();

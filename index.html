@@ -316,139 +316,7 @@
 .alert-badge.ok{background:#e6f2e8}
 .alert-summary-box{padding:14px;border-radius:12px;background:#f7f5ef;line-height:1.6}
 
-</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-function myDayDateKey(){
-  const d=new Date();
-  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-function myDayDateLabel(){
-  return new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-}
-function escMD(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function renderMyDay(){
-  if(!USER) return;
-  const today=myDayDateKey(), now=new Date();
-  const tasks=D.tasks||[], events=D.events||[], reminders=D.reminders||[], expenses=D.expenses||[];
-  const todayTasks=tasks.filter(t=>t.date===today);
-  const activeToday=todayTasks.filter(t=>!t.completed);
-  const completedToday=todayTasks.filter(t=>t.completed);
-  const todayEvents=events.filter(e=>e.date===today);
-  const todayReminders=reminders.filter(r=>r.date===today);
-  const overdueTasks=tasks.filter(t=>!t.completed && t.date && t.date<today);
-  const overdueReminders=reminders.filter(r=>!r.completed && r.date && r.date<today);
-  const overdue=[...overdueTasks.map(t=>({kind:'Task',title:t.title,date:t.date})),...overdueReminders.map(r=>({kind:'Reminder',title:r.title,date:r.date}))];
-  const todayMoney=expenses.filter(e=>e.date===today);
-  const moneyIn=todayMoney.filter(e=>e.transaction_type==='Money In').reduce((s,e)=>s+Number(e.amount||0),0);
-  const moneyOut=todayMoney.filter(e=>e.transaction_type!=='Money In').reduce((s,e)=>s+Number(e.amount||0),0);
-  const total=todayTasks.length;
-  const done=completedToday.length;
-  const pct=total?Math.round(done/total*100):0;
-
-  const el=id=>document.getElementById(id);
-  if(el('myday-date')) el('myday-date').textContent=myDayDateLabel();
-  if(el('myday-stats')) el('myday-stats').innerHTML=`
-    <div class="stat-card"><b>${activeToday.length}</b><span>Tasks Left</span></div>
-    <div class="stat-card"><b>${todayEvents.length}</b><span>Events</span></div>
-    <div class="stat-card"><b>${todayReminders.length}</b><span>Reminders</span></div>
-    <div class="stat-card"><b>${overdue.length}</b><span>Overdue</span></div>`;
-
-  const priorityRank={High:0,Medium:1,Low:2};
-  const sorted=activeToday.slice().sort((a,b)=>(priorityRank[a.priority]??1)-(priorityRank[b.priority]??1));
-  el('myday-task-count').textContent=`${activeToday.length} left`;
-  el('myday-tasks').innerHTML=sorted.length?sorted.map(t=>`
-    <div class="day-row">
-      <div><b>${escMD(t.title)}</b><small>${escMD(t.category||'Home')} · ${escMD(t.type||'One-time')}</small></div>
-      <span class="badge">${escMD(t.priority||'Medium')}</span>
-    </div>`).join(''):'<div class="empty">🎉 No active tasks for today.</div>';
-
-  el('myday-event-count').textContent=`${todayEvents.length}`;
-  el('myday-events').innerHTML=todayEvents.length?todayEvents.sort((a,b)=>String(a.time||'').localeCompare(String(b.time||''))).map(e=>`
-    <div class="day-row">
-      <div><b>${escMD(e.title)}</b><small>${escMD(e.time||'No time')} · ${escMD(e.type||'Event')}</small></div>
-      ${e.completed?'<span class="badge">Done</span>':''}
-    </div>`).join(''):'<div class="empty">No events today.</div>';
-
-  el('myday-reminder-count').textContent=`${todayReminders.length}`;
-  el('myday-reminders').innerHTML=todayReminders.length?todayReminders.map(r=>`
-    <div class="day-row">
-      <div><b>${escMD(r.title)}</b><small>${escMD(r.category||'General')} · ${escMD(r.repeat||'Once')}</small></div>
-      ${r.completed?'<span class="badge">Done</span>':''}
-    </div>`).join(''):'<div class="empty">No reminders today.</div>';
-
-  el('myday-overdue-count').textContent=`${overdue.length}`;
-  el('myday-overdue').innerHTML=overdue.length?overdue.sort((a,b)=>a.date.localeCompare(b.date)).map(x=>`
-    <div class="day-row">
-      <div><b>${escMD(x.title)}</b><small>${escMD(x.kind)} · Due ${escMD(x.date)}</small></div>
-      <span class="badge">Overdue</span>
-    </div>`).join(''):'<div class="empty">✨ Nothing overdue.</div>';
-
-  el('myday-money').innerHTML=`
-    <div class="money-line"><span>Received</span><b>₹${moneyIn.toLocaleString('en-IN')}</b></div>
-    <div class="money-line"><span>Spent</span><b>₹${moneyOut.toLocaleString('en-IN')}</b></div>
-    <div class="money-line"><span>Net today</span><b>₹${(moneyIn-moneyOut).toLocaleString('en-IN')}</b></div>`;
-
-  el('myday-progress').innerHTML=`
-    <div class="progress-wrap"><div class="progress-bar"><i style="width:${pct}%"></i></div><strong>${pct}%</strong></div>
-    <p class="muted">${done} of ${total} today's tasks completed.</p>`;
-}
-
-
-function alertDateKey(){
-  const d=new Date();
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-function alertEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function renderAlerts(){
-  if(!USER) return;
-  const today=alertDateKey();
-  const tasks=D.tasks||[], reminders=D.reminders||[], events=D.events||[];
-  const activeTasks=tasks.filter(t=>!t.completed);
-  const overdueTasks=activeTasks.filter(t=>t.date && t.date<today);
-  const dueTasks=activeTasks.filter(t=>t.date===today);
-  const high=activeTasks.filter(t=>String(t.priority||'Medium')==='High');
-  const overdueRem=reminders.filter(r=>!r.completed && r.date && r.date<today);
-  const dueRem=reminders.filter(r=>!r.completed && r.date===today);
-  const special=reminders.filter(r=>!r.completed && ['Birthday','Anniversary','Bill','Renewal'].includes(r.category));
-  const upcoming=events.filter(e=>e.date && e.date>=today && !e.completed).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
-  const overdue=[...overdueTasks.map(t=>({title:t.title,date:t.date,kind:'Task'})),...overdueRem.map(r=>({title:r.title,date:r.date,kind:'Reminder'}))];
-  const due=[...dueTasks.map(t=>({title:t.title,kind:'Task',extra:t.priority||'Medium'})),...dueRem.map(r=>({title:r.title,kind:'Reminder',extra:r.category||'General'}))];
-
-  const el=id=>document.getElementById(id);
-  el('alert-stats').innerHTML=`
-    <div class="stat-card"><b>${overdue.length}</b><span>Overdue</span></div>
-    <div class="stat-card"><b>${due.length}</b><span>Due Today</span></div>
-    <div class="stat-card"><b>${high.length}</b><span>High Priority</span></div>
-    <div class="stat-card"><b>${upcoming.length}</b><span>Upcoming Events</span></div>`;
-
-  el('alert-overdue-count').textContent=overdue.length;
-  el('alert-overdue').innerHTML=overdue.length?overdue.sort((a,b)=>a.date.localeCompare(b.date)).map(x=>`
-    <div class="alert-row"><div><b>${alertEsc(x.title)}</b><small>${alertEsc(x.kind)} · Due ${alertEsc(x.date)}</small></div><span class="alert-badge danger">Overdue</span></div>`).join(''):'<div class="empty">✨ Nothing overdue.</div>';
-
-  el('alert-today-count').textContent=due.length;
-  el('alert-today').innerHTML=due.length?due.map(x=>`
-    <div class="alert-row"><div><b>${alertEsc(x.title)}</b><small>${alertEsc(x.kind)} · ${alertEsc(x.extra)}</small></div><span class="alert-badge warn">Today</span></div>`).join(''):'<div class="empty">Nothing due today.</div>';
-
-  el('alert-high-count').textContent=high.length;
-  el('alert-high').innerHTML=high.length?high.slice(0,8).map(t=>`
-    <div class="alert-row"><div><b>${alertEsc(t.title)}</b><small>${alertEsc(t.category||'Home')} · ${alertEsc(t.date||'No date')}</small></div><span class="alert-badge danger">High</span></div>`).join(''):'<div class="empty">No high-priority active tasks.</div>';
-
-  el('alert-special-count').textContent=special.length;
-  el('alert-special').innerHTML=special.slice(0,8).map(r=>`
-    <div class="alert-row"><div><b>${alertEsc(r.title)}</b><small>${alertEsc(r.category)} · ${alertEsc(r.date||'No date')}</small></div><span class="alert-badge">${alertEsc(r.repeat||'Once')}</span></div>`).join('')||'<div class="empty">No important reminders.</div>';
-
-  el('alert-events-count').textContent=upcoming.length;
-  el('alert-events').innerHTML=upcoming.length?upcoming.map(e=>`
-    <div class="alert-row"><div><b>${alertEsc(e.title)}</b><small>${alertEsc(e.date)} ${e.time?'· '+alertEsc(e.time):''}</small></div><span class="alert-badge">${alertEsc(e.type||'Event')}</span></div>`).join(''):'<div class="empty">No upcoming events.</div>';
-
-  let message='You are all clear for now. 🎉';
-  if(overdue.length) message=`You have <b>${overdue.length}</b> overdue item${overdue.length>1?'s':''}. Clear these first.`;
-  else if(due.length) message=`You have <b>${due.length}</b> item${due.length>1?'s':''} due today.`;
-  else if(high.length) message=`You have <b>${high.length}</b> high-priority task${high.length>1?'s':''} waiting.`;
-  el('alert-summary').innerHTML=`<div class="alert-summary-box">${message}</div>`;
-}
-
-</script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="myday">☀️ My Day</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex:1">
+</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="myday">☀️ My Day</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">House Expenses</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex:1">
 <div class="search-wrap">
 <input id="globalSearch" type="search" placeholder="🔎 Search tasks, reminders, events, money, staff…" autocomplete="off">
 <div id="searchResults" class="search-results"></div>
@@ -861,7 +729,19 @@ $('rl').innerHTML=a.length?a.map(r=>`<div class="task ${r.completed?'done':''}">
 document.querySelectorAll('.delr').forEach(x=>x.onclick=()=>deleteRow('reminders',x.dataset.id));
 document.querySelectorAll('.rem').forEach(x=>x.onchange=()=>updateRow('reminders',x.dataset.id,{completed:x.checked}))
 }
-$('ar').onclick=async()=>{let n=$('rn').value.trim();if(!n)return;await addRow('reminders',{title:n,category:$('rc').value,repeat_type:$('rr').value,reminder_date:$('rd').value,note:$('rnote').value.trim(),completed:false});$('rn').value='';$('rnote').value='';$('rc').value='General';$('rr').value='Once';$('rd').value=now()};
+$('ar').onclick=async()=>{
+  const btn=$('ar');
+  const n=$('rn').value.trim();
+  const date=$('rd').value||now();
+  if(!n){alert('Please enter a reminder title.');$('rn').focus();return;}
+  if(!USER){alert('Please sign in first.');return;}
+  btn.disabled=true; const old=btn.textContent; btn.textContent='Adding…';
+  try{
+    await addRow('reminders',{title:n,category:$('rc').value,repeat_type:$('rr').value,reminder_date:date,note:$('rnote').value.trim(),completed:false});
+    $('rn').value='';$('rnote').value='';$('rc').value='General';$('rr').value='Once';$('rd').value=now();
+  }catch(e){console.error('REMINDER ADD ERROR',e);}
+  finally{btn.disabled=false;btn.textContent=old;}
+};
 function renderX(){
 let income=D.expenses.filter(x=>(x.transaction_type||'Money Out')==='Money In').reduce((s,x)=>s+Number(x.amount||0),0);
 let outflow=D.expenses.filter(x=>(x.transaction_type||'Money Out')==='Money Out').reduce((s,x)=>s+Number(x.amount||0),0);
@@ -988,4 +868,43 @@ function syncMobileMenuVisibility(){
 }
 async function startApp(){try{await getUser();if(!USER){$('auth').style.display='flex';$('app').style.display='none';syncMobileMenuVisibility();msg('Please sign in.');return}$('auth').style.display='none';$('app').style.display='flex';syncMobileMenuVisibility();await loadAll()}catch(e){console.error('START APP ERROR',e);$('auth').style.display='flex';$('app').style.display='none';msg(e.message||'Could not connect to Supabase.')}}
 supabaseClient.auth.onAuthStateChange(()=>setTimeout(startApp,0));startApp();
+
+function myDayDateKey(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function myDayDateLabel(){return new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+function uiEsc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function renderMyDay(){
+ if(!USER)return;
+ const today=myDayDateKey(), tasks=D.tasks||[], events=D.events||[], reminders=D.reminders||[], expenses=D.expenses||[];
+ const todayTasks=tasks.filter(t=>t.task_date===today), active=todayTasks.filter(t=>!t.completed), done=todayTasks.filter(t=>t.completed);
+ const todayEvents=events.filter(e=>e.event_date===today), todayRem=reminders.filter(r=>r.reminder_date===today);
+ const overdue=[...tasks.filter(t=>!t.completed&&t.task_date&&t.task_date<today).map(t=>({title:t.title,date:t.task_date,kind:'Task'})),...reminders.filter(r=>!r.completed&&r.reminder_date&&r.reminder_date<today).map(r=>({title:r.title,date:r.reminder_date,kind:'Reminder'}))];
+ const tm=expenses.filter(e=>e.expense_date===today), income=tm.filter(e=>e.transaction_type==='Money In').reduce((s,e)=>s+Number(e.amount||0),0), out=tm.filter(e=>e.transaction_type!=='Money In').reduce((s,e)=>s+Number(e.amount||0),0), pct=todayTasks.length?Math.round(done.length/todayTasks.length*100):0;
+ const el=id=>$(id); if(el('myday-date'))el('myday-date').textContent=myDayDateLabel();
+ el('myday-stats').innerHTML=`<div class="stat-card"><b>${active.length}</b><span>Tasks Left</span></div><div class="stat-card"><b>${todayEvents.length}</b><span>Events</span></div><div class="stat-card"><b>${todayRem.length}</b><span>Reminders</span></div><div class="stat-card"><b>${overdue.length}</b><span>Overdue</span></div>`;
+ const rank={High:0,Medium:1,Low:2}; const sorted=active.slice().sort((a,b)=>(rank[a.priority||'Medium']??1)-(rank[b.priority||'Medium']??1));
+ el('myday-task-count').textContent=`${active.length} left`; el('myday-tasks').innerHTML=sorted.length?sorted.map(t=>`<div class="day-row"><div><b>${uiEsc(t.title)}</b><small>${uiEsc(t.category||'Home')} · ${uiEsc(t.task_type||'One-time')}</small></div><span class="badge">${uiEsc(t.priority||'Medium')}</span></div>`).join(''):'<div class="empty">🎉 No active tasks for today.</div>';
+ el('myday-event-count').textContent=todayEvents.length; el('myday-events').innerHTML=todayEvents.length?todayEvents.map(e=>`<div class="day-row"><div><b>${uiEsc(e.title)}</b><small>${uiEsc(e.event_time||'No time')} · ${uiEsc(e.event_type||'Event')}</small></div>${e.completed?'<span class="badge">Done</span>':''}</div>`).join(''):'<div class="empty">No events today.</div>';
+ el('myday-reminder-count').textContent=todayRem.length; el('myday-reminders').innerHTML=todayRem.length?todayRem.map(r=>`<div class="day-row"><div><b>${uiEsc(r.title)}</b><small>${uiEsc(r.category||'General')} · ${uiEsc(r.repeat_type||'Once')}</small></div>${r.completed?'<span class="badge">Done</span>':''}</div>`).join(''):'<div class="empty">No reminders today.</div>';
+ el('myday-overdue-count').textContent=overdue.length; el('myday-overdue').innerHTML=overdue.length?overdue.map(x=>`<div class="day-row"><div><b>${uiEsc(x.title)}</b><small>${uiEsc(x.kind)} · Due ${uiEsc(x.date)}</small></div><span class="badge">Overdue</span></div>`).join(''):'<div class="empty">✨ Nothing overdue.</div>';
+ el('myday-money').innerHTML=`<div class="money-line"><span>Received</span><b>₹${income.toLocaleString('en-IN')}</b></div><div class="money-line"><span>Spent</span><b>₹${out.toLocaleString('en-IN')}</b></div><div class="money-line"><span>Net today</span><b>₹${(income-out).toLocaleString('en-IN')}</b></div>`;
+ el('myday-progress').innerHTML=`<div class="progress-wrap"><div class="progress-bar"><i style="width:${pct}%"></i></div><strong>${pct}%</strong></div><p class="muted">${done.length} of ${todayTasks.length} today's tasks completed.</p>`;
+}
+function renderAlerts(){
+ if(!USER)return; const today=myDayDateKey(),tasks=D.tasks||[],reminders=D.reminders||[],events=D.events||[];
+ const active=tasks.filter(t=>!t.completed), overdue=[...active.filter(t=>t.task_date&&t.task_date<today).map(t=>({title:t.title,date:t.task_date,kind:'Task'})),...reminders.filter(r=>!r.completed&&r.reminder_date&&r.reminder_date<today).map(r=>({title:r.title,date:r.reminder_date,kind:'Reminder'}))];
+ const due=[...active.filter(t=>t.task_date===today).map(t=>({title:t.title,kind:'Task',extra:t.priority||'Medium'})),...reminders.filter(r=>!r.completed&&r.reminder_date===today).map(r=>({title:r.title,kind:'Reminder',extra:r.category||'General'}))];
+ const high=active.filter(t=>(t.priority||'Medium')==='High'), special=reminders.filter(r=>!r.completed&&['Birthday','Anniversary','Bill','Renewal'].includes(r.category));
+ const upcoming=events.filter(e=>!e.completed&&e.event_date&&e.event_date>=today).sort((a,b)=>a.event_date.localeCompare(b.event_date)).slice(0,5), el=id=>$(id);
+ el('alert-stats').innerHTML=`<div class="stat-card"><b>${overdue.length}</b><span>Overdue</span></div><div class="stat-card"><b>${due.length}</b><span>Due Today</span></div><div class="stat-card"><b>${high.length}</b><span>High Priority</span></div><div class="stat-card"><b>${upcoming.length}</b><span>Upcoming Events</span></div>`;
+ el('alert-overdue-count').textContent=overdue.length;el('alert-overdue').innerHTML=overdue.length?overdue.map(x=>`<div class="alert-row"><div><b>${uiEsc(x.title)}</b><small>${uiEsc(x.kind)} · Due ${uiEsc(x.date)}</small></div><span class="alert-badge danger">Overdue</span></div>`).join(''):'<div class="empty">✨ Nothing overdue.</div>';
+ el('alert-today-count').textContent=due.length;el('alert-today').innerHTML=due.length?due.map(x=>`<div class="alert-row"><div><b>${uiEsc(x.title)}</b><small>${uiEsc(x.kind)} · ${uiEsc(x.extra)}</small></div><span class="alert-badge warn">Today</span></div>`).join(''):'<div class="empty">Nothing due today.</div>';
+ el('alert-high-count').textContent=high.length;el('alert-high').innerHTML=high.length?high.slice(0,8).map(t=>`<div class="alert-row"><div><b>${uiEsc(t.title)}</b><small>${uiEsc(t.category||'Home')} · ${uiEsc(t.task_date||'No date')}</small></div><span class="alert-badge danger">High</span></div>`).join(''):'<div class="empty">No high-priority active tasks.</div>';
+ el('alert-special-count').textContent=special.length;el('alert-special').innerHTML=special.length?special.slice(0,8).map(r=>`<div class="alert-row"><div><b>${uiEsc(r.title)}</b><small>${uiEsc(r.category)} · ${uiEsc(r.reminder_date||'No date')}</small></div><span class="alert-badge">${uiEsc(r.repeat_type||'Once')}</span></div>`).join(''):'<div class="empty">No important reminders.</div>';
+ el('alert-events-count').textContent=upcoming.length;el('alert-events').innerHTML=upcoming.length?upcoming.map(e=>`<div class="alert-row"><div><b>${uiEsc(e.title)}</b><small>${uiEsc(e.event_date)} ${e.event_time?'· '+uiEsc(e.event_time):''}</small></div><span class="alert-badge">${uiEsc(e.event_type||'Event')}</span></div>`).join(''):'<div class="empty">No upcoming events.</div>';
+ let message=overdue.length?`You have <b>${overdue.length}</b> overdue item${overdue.length>1?'s':''}. Clear these first.`:due.length?`You have <b>${due.length}</b> item${due.length>1?'s':''} due today.`:high.length?`You have <b>${high.length}</b> high-priority task${high.length>1?'s':''} waiting.`:'You are all clear for now. 🎉'; el('alert-summary').innerHTML=`<div class="alert-summary-box">${message}</div>`;
+}
+
 </script></body></html>

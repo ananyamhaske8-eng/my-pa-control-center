@@ -329,96 +329,117 @@
 .notification-card{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px;padding:14px 16px}.notification-card small{display:block;color:#777;margin-top:4px}@media(max-width:600px){.notification-card{align-items:flex-start;flex-direction:column}.notification-card button{width:100%}}
 </style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+<script>
+const PA_VAPID_PUBLIC_KEY = "BJ9hIvA6PmuJXpSsLRms_jCatUh4dV9x15P_GagRMxUF0i1naapCVS9WH-zysM_oa5nBEjyjgTxfiH2aDWl9UjU";
+
 function notificationTodayKey(){
   const d=new Date();
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
+
 function notificationStatusText(){
   const el=document.getElementById("notification-status");
-  if(!el) return;
-  if(!("Notification" in window)){el.textContent="This browser does not support notifications.";return;}
-  if(Notification.permission==="granted") el.textContent="Notifications are enabled on this device.";
-  else if(Notification.permission==="denied") el.textContent="Notifications are blocked. Allow them in browser settings.";
+  if(!el)return;
+  if(!("Notification" in window)){
+    el.textContent="This browser does not support notifications.";
+    return;
+  }
+  if(Notification.permission==="granted") el.textContent="Notifications are enabled on this phone.";
+  else if(Notification.permission==="denied") el.textContent="Notifications are blocked. Allow them in Chrome settings.";
   else el.textContent="Notifications are not enabled yet.";
 }
-async function enableNotifications(){
-  if(!window.isSecureContext){
-    alert("Notifications require the secure HTTPS version of your PA Control Center.");
-    return;
-  }
-  if(!("Notification" in window)){
-    alert("This browser does not support web notifications. On Android, please use Chrome.");
-    return;
-  }
-  try{
-    if(Notification.permission==="denied"){
-      alert("Notifications are blocked for this site. In Chrome: ⋮ → Settings → Site settings → Notifications, then allow this site.");
-      notificationStatusText();
-      return;
-    }
-    let permission=Notification.permission;
-    if(permission!=="granted"){
-      permission=await Notification.requestPermission();
-    }
-    notificationStatusText();
-    if(permission!=="granted"){
-      alert("Notification permission was not allowed. If no popup appeared, Chrome may have blocked the request. Check the site's Permissions → Notifications.");
-      return;
-    }
-    const ok=await registerPAServiceWorker();
-    if(!ok){
-      alert("The notification service could not start. Please refresh the page and try again.");
-      return;
-    }
-    const reg=await navigator.serviceWorker.ready;
-    await reg.showNotification("PA Control Center",{
-      body:"✅ Notifications are working on this phone!",
-      tag:"pa-test-notification"
-    });
-    notificationStatusText();
-  }catch(e){
-    console.error(e);
-    alert("Notification error: "+(e.message||e));
-  }
-}function checkReminderNotifications(){
-  if(typeof USER==="undefined" || !USER || !("Notification" in window) || Notification.permission!=="granted") return;
-  const today=notificationTodayKey();
-  const reminders=(typeof D!=="undefined" && D.reminders)?D.reminders:[];
-  let seen={};
-  try{seen=JSON.parse(localStorage.getItem("pa_notified_reminders_v1")||"{}")||{};}catch(e){}
-  reminders.forEach(r=>{
-    if(r.completed || !r.date || r.date!==today) return;
-    const key="pa-reminder-"+r.id+"-"+r.date;
-    if(seen[key]) return;
-    try{
-      if(navigator.serviceWorker && Notification.permission==="granted"){
-        navigator.serviceWorker.ready.then(reg=>{
-          reg.showNotification("🔔 "+(r.title||"Reminder"),{
-            body:(r.category||"General")+" reminder for today.",
-            tag:key
-          });
-        }).catch(()=>{});
-      }
-      seen[key]=Date.now();
-    }catch(e){}
-  });
-  try{localStorage.setItem("pa_notified_reminders_v1",JSON.stringify(seen));}catch(e){}
-}
 
-setTimeout(function(){notificationStatusText();},100);
-setInterval(function(){checkReminderNotifications();},60000);
+function urlBase64ToUint8Array(base64String){
+  const padding="=".repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,"+").replace(/_/g,"/");
+  const rawData=atob(base64);
+  return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
+}
 
 async function registerPAServiceWorker(){
-  if(!('serviceWorker' in navigator)) return false;
+  if(!("serviceWorker" in navigator)) throw new Error("Service workers are not supported on this phone.");
+  const reg=await navigator.serviceWorker.register("./sw.js");
+  await navigator.serviceWorker.ready;
+  return reg;
+}
+
+async function savePhonePushSubscription(subscription){
+  if(!USER) throw new Error("Please sign in first.");
+  const json=subscription.toJSON();
+  const endpoint=json.endpoint;
+  const p256dh=json.keys && json.keys.p256dh;
+  const auth=json.keys && json.keys.auth;
+  if(!endpoint || !p256dh || !auth) throw new Error("Could not read the phone push subscription.");
+
+  const {error}=await supabaseClient
+    .from("push_subscriptions")
+    .upsert(
+      {
+        user_id:USER.id,
+        endpoint:endpoint,
+        p256dh:p256dh,
+        auth:auth,
+        updated_at:new Date().toISOString()
+      },
+      {onConflict:"user_id,endpoint"}
+    );
+  if(error) throw error;
+}
+
+async function enableNotifications(){
   try{
-    await navigator.serviceWorker.register('sw.js');
-    return true;
+    if(!window.isSecureContext){
+      alert("Please open the HTTPS version of PA Control Center.");
+      return;
+    }
+    if(!("Notification" in window)){
+      alert("This Android browser does not support notifications.");
+      return;
+    }
+    if(!USER){
+      alert("Please sign in first.");
+      return;
+    }
+
+    let permission=Notification.permission;
+    if(permission!=="granted") permission=await Notification.requestPermission();
+    notificationStatusText();
+
+    if(permission!=="granted"){
+      alert("Notification permission was not allowed.");
+      return;
+    }
+
+    const reg=await registerPAServiceWorker();
+    let subscription=await reg.pushManager.getSubscription();
+
+    if(!subscription){
+      subscription=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlBase64ToUint8Array(PA_VAPID_PUBLIC_KEY)
+      });
+    }
+
+    await savePhonePushSubscription(subscription);
+
+    await reg.showNotification("PA Control Center", {
+      body:"✅ Your phone is connected for push reminders.",
+      tag:"pa-phone-connected"
+    });
+
+    const el=document.getElementById("notification-status");
+    if(el)el.textContent="✅ This phone is connected for push reminders.";
   }catch(e){
-    console.log('PA service worker registration failed',e);
-    return false;
+    console.error("PUSH SETUP ERROR",e);
+    alert("Could not connect this phone for push notifications: "+(e.message||e));
   }
 }
-setTimeout(function(){registerPAServiceWorker();},500);
+
+window.enableNotifications=enableNotifications;
+window.notificationStatusText=notificationStatusText;
+
+setTimeout(notificationStatusText,100);
+setTimeout(()=>registerPAServiceWorker().catch(e=>console.log("Service worker:",e)),500);
 </script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="myday">☀️ My Day</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">🏠 House Expenses</button><button data-p="mandir">🛕 Mandir Accounts</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex:1">
 <div class="search-wrap">
 <input id="globalSearch" type="search" placeholder="🔎 Search tasks, reminders, events, money, staff…" autocomplete="off">

@@ -340,7 +340,7 @@ function notificationStatusText(){
   else if(Notification.permission==="denied") el.textContent="Notifications are blocked. Allow them in browser settings.";
   else el.textContent="Notifications are not enabled yet.";
 }
-async async function enableNotifications(){
+async function enableNotifications(){
   if(!window.isSecureContext){
     alert("Notifications require the secure HTTPS version of your PA Control Center.");
     return;

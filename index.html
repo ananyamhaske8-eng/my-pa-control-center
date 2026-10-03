@@ -340,7 +340,7 @@ function notificationStatusText(){
   else if(Notification.permission==="denied") el.textContent="Notifications are blocked. Allow them in browser settings.";
   else el.textContent="Notifications are not enabled yet.";
 }
-async function enableNotifications(){
+async async function enableNotifications(){
   if(!window.isSecureContext){
     alert("Notifications require the secure HTTPS version of your PA Control Center.");
     return;
@@ -418,6 +418,7 @@ async function registerPAServiceWorker(){
     return false;
   }
 }
+setTimeout(function(){registerPAServiceWorker();},500);
 </script></head><body><div id="auth" style="position:fixed;inset:0;background:#f5f6fa;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"><div class="card" style="width:min(420px,100%);margin:0"><h1 style="font-size:25px">PA Control Center</h1><p class="muted">Sign in to keep your tasks synced across your laptop and phone.</p><div id="authMsg" class="muted" style="min-height:20px;margin:10px 0"></div><input id="authEmail" type="email" placeholder="Email" style="width:100%;margin-bottom:8px"><input id="authPass" type="password" placeholder="Password" style="width:100%;margin-bottom:10px"><div style="display:flex;gap:8px"><button id="loginBtn" style="flex:1">Sign in</button><button id="signupBtn" class="secondary" style="flex:1">Create account</button></div></div></div><div class="app" id="app" style="display:none"><div id="mobileOverlay" class="mobile-overlay"></div><button id="mobileMenu" class="mobile-menu" aria-label="Open menu">☰</button><aside class="side" id="sideBar"><div class="brand">PA Control Center <button id="closeMenu" class="close-menu" aria-label="Close menu">×</button></div><div class="nav" id="nav"><button class="active" data-p="dashboard">Dashboard</button><button data-p="myday">☀️ My Day</button><button data-p="tasks">Tasks & Mini Tasks</button><button data-p="calendar">Calendar & Events</button><button data-p="reminders">Future Reminders</button><button data-p="expenses">🏠 House Expenses</button><button data-p="mandir">🛕 Mandir Accounts</button><button data-p="people">Staff & Services</button></div></aside><main class="main"><div class="top"><div><h1 id="heading">Dashboard</h1><div class="muted" id="today"></div></div><div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex:1">
 <div class="search-wrap">
 <input id="globalSearch" type="search" placeholder="🔎 Search tasks, reminders, events, money, staff…" autocomplete="off">

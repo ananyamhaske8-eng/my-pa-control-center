@@ -568,7 +568,7 @@ setInterval(function(){checkReminderNotifications();},60000);
   <div id="el"></div>
 </div>
 </section>
-<section id="reminders" class="page"><div class="card"><h2>Add Future Reminder</h2><p class="muted">Birthdays, anniversaries, bills, renewals, follow-ups, calls, and anything you don't want to forget.</p><div class="form"><input id="rn" placeholder="Reminder e.g. Electricity bill"><select id="rc"><option>General</option><option>Birthday</option><option>Anniversary</option><option>Bill</option><option>Renewal</option><option>Follow-up</option><option>Call</option></select><select id="rr"><option>Once</option><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select><input id="rd" type="date"><input id="rnote" placeholder="Note / details"><button id="ar">Add Reminder</button></div></div><div class="card"><div class="sectionhead"><h2>My Reminders</h2><span id="remCount" class="badge">0</span></div><div id="rl"></div></div></section>
+<section id="reminders" class="page"><div class="card notification-card"><div><b>🔔 Reminder Notifications</b><small id="notification-status">Checking notification permission…</small></div><button onclick="enableNotifications()">Enable Notifications</button></div><div class="card"><h2>Add Future Reminder</h2><p class="muted">Birthdays, anniversaries, bills, renewals, follow-ups, calls, and anything you don't want to forget.</p><div class="form"><input id="rn" placeholder="Reminder e.g. Electricity bill"><select id="rc"><option>General</option><option>Birthday</option><option>Anniversary</option><option>Bill</option><option>Renewal</option><option>Follow-up</option><option>Call</option></select><select id="rr"><option>Once</option><option>Daily</option><option>Weekly</option><option>Monthly</option><option>Yearly</option></select><input id="rd" type="date"><input id="rnote" placeholder="Note / details"><button id="ar">Add Reminder</button></div></div><div class="card"><div class="sectionhead"><h2>My Reminders</h2><span id="remCount" class="badge">0</span></div><div id="rl"></div></div></section>
 <section id="expenses" class="page">
 <div class="card">
   <h2>🏠 House Money Manager</h2>
@@ -595,7 +595,6 @@ setInterval(function(){checkReminderNotifications();},60000);
 </section>
 
 <section id="mandir" class="page">
-  <div class="card notification-card"><div><b>🔔 Reminder Notifications</b><small id="notification-status">Checking notification permission…</small></div><button onclick="enableNotifications()">Enable Notifications</button></div>
   <div class="page-head">
     <div>
       <h1>🛕 Mandir Accounts</h1>

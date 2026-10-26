@@ -1014,8 +1014,7 @@ $('downloadExpensePdf').onclick=()=>{
   const month=selectedExpenseMonth(), data=monthExpenseData(month), {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const monthLabel=new Date(month+'-01T00:00:00').toLocaleDateString('en-IN',{month:'long',year:'numeric'});
-  doc.setFontSize(18);doc.text('PA Control Center - Monthly Expense Report',14,16);
-  doc.setFontSize(12);doc.text(monthLabel,14,24);
+  doc.setFontSize(18);doc.text('Suvas Expense - '+monthLabel,14,16);
   doc.setFontSize(10);
   doc.text('Opening balance: '+money(data.opening),14,33);
   doc.text('Money received: '+money(data.income),88,33);
@@ -1047,7 +1046,7 @@ $('downloadExpensePdf').onclick=()=>{
     row.forEach((cell,j)=>doc.text(String(cell),xPositions[j],y,{maxWidth:widths[j]}));
     y+=7;
   });
-  doc.save('PA-Expense-Report-'+month+'.pdf');
+  doc.save('Suvas-Expense-'+month+'.pdf');
 };
 $('ax').onclick=async()=>{
   let n=$('xn').value.trim(),a=Number($('xa').value);

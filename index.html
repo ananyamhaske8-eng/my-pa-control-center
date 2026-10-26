@@ -327,8 +327,21 @@
 
 
 .notification-card{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px;padding:14px 16px}.notification-card small{display:block;color:#777;margin-top:4px}@media(max-width:600px){.notification-card{align-items:flex-start;flex-direction:column}.notification-card button{width:100%}}
-</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
+
+.month-report-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.month-report-controls input{max-width:190px;background:#fff}
+.expense-chart-wrap{position:relative;height:320px;width:100%}
+.expense-report-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.expense-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.expense-summary-grid .card{margin:0}
+.expense-summary-grid .stat b{font-size:22px}
+.expense-detail-table{width:100%;border-collapse:collapse;font-size:13px}
+.expense-detail-table th,.expense-detail-table td{padding:10px 8px;text-align:left;border-bottom:1px solid #eceef2}
+.expense-detail-table th{background:#f7f8fa;color:#555}
+.expense-detail-scroll{overflow-x:auto}
+@media(max-width:800px){.expense-report-grid{grid-template-columns:1fr}.expense-summary-grid{grid-template-columns:1fr 1fr}.expense-chart-wrap{height:270px}}
+@media(max-width:420px){.expense-summary-grid{grid-template-columns:1fr}}
+</style><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const PA_VAPID_PUBLIC_KEY = "BJ9hIvA6PmuJXpSsLRms_jCatUh4dV9x15P_GagRMxUF0i1naapCVS9WH-zysM_oa5nBEjyjgTxfiH2aDWl9UjU";
 
@@ -647,6 +660,24 @@ setTimeout(()=>registerPAServiceWorker().catch(e=>console.log("Service worker:",
     <button id="ax">Add Transaction</button>
   </div>
 </div>
+<div class="card">
+  <div class="sectionhead"><h2>📊 Monthly Expense Report</h2><div class="month-report-controls"><label for="expenseMonth" class="muted">Month</label><input id="expenseMonth" type="month"><button id="downloadExpensePdf">⬇ Download PDF</button></div></div>
+  <p class="muted">Daily columns show total spent on each date. Your month-end balance carries forward automatically into the next month. For your first month, add your starting amount as a Money In transaction with category exactly <b>Opening Balance</b>; it will be shown separately from new money received.</p>
+  <div class="expense-summary-grid" style="margin:14px 0">
+    <div class="card stat"><span>Opening Balance</span><b id="monthOpening">₹0</b></div>
+    <div class="card stat"><span>Money Received</span><b id="monthIncome">₹0</b></div>
+    <div class="card stat"><span>Total Spent</span><b id="monthSpent">₹0</b></div>
+    <div class="card stat"><span>Closing Balance</span><b id="monthClosing">₹0</b></div>
+  </div>
+  <div class="expense-report-grid">
+    <div class="card" style="margin:0"><h3>Daily Spending</h3><div class="expense-chart-wrap"><canvas id="dailyExpenseChart" aria-label="Daily spending column chart"></canvas></div></div>
+    <div class="card" style="margin:0"><h3>Spending by Category</h3><div class="expense-chart-wrap"><canvas id="categoryExpenseChart" aria-label="Spending by category chart"></canvas></div><div id="topExpenseCategory" class="muted" style="margin-top:8px"></div></div>
+  </div>
+  <div class="card" style="margin-top:15px">
+    <div class="sectionhead"><h3>Month's Expense Details</h3><span id="monthExpenseCount" class="badge">0 entries</span></div>
+    <div id="monthExpenseDetails" class="expense-detail-scroll"></div>
+  </div>
+</div>
 <div class="grid money-stats">
   <div class="card stat"><span>Total Money Received</span><b id="xin">₹0</b></div>
   <div class="card stat"><span>Total Money Spent</span><b id="xout">₹0</b></div>
@@ -911,34 +942,120 @@ $('ar').onclick=async()=>{
   }catch(e){console.error('REMINDER ADD ERROR',e);}
   finally{btn.disabled=false;btn.textContent=old;}
 };
-function renderX(){
-const house=D.expenses.filter(x=>!String(x.category||'').toLowerCase().startsWith('mandir'));
-let income=house.filter(x=>(x.transaction_type||'Money Out')==='Money In').reduce((s,x)=>s+Number(x.amount||0),0);
-let outflow=house.filter(x=>(x.transaction_type||'Money Out')==='Money Out').reduce((s,x)=>s+Number(x.amount||0),0);
-$('xin').textContent=money(income);
-$('xout').textContent=money(outflow);
-let balance=income-outflow;
-$('xbal').textContent=money(balance);
-$('xcount').textContent=house.length;
-let a=[...house].sort((x,y)=>String(y.expense_date||'').localeCompare(String(x.expense_date||'')));
-$('xl').innerHTML=a.length?a.map(x=>{
-  let kind=x.transaction_type||'Money Out';
-  let incoming=kind==='Money In';
-  return `<div class="transaction">
-    <div>
-      <div class="transaction-title">${esc(x.name)}</div>
-      <div class="transaction-meta">${esc(x.category||'General')} • ${nice(x.expense_date)}</div>
-      ${x.note?`<div class="transaction-note">${esc(x.note)}</div>`:''}
-    </div>
-    <div><span class="badge">${kind}</span></div>
-    <div class="${incoming?'in-money':'out-money'}">${incoming?'+':'−'}${money(x.amount)}</div>
-    <div>${incoming?'Received':'Spent'}</div>
-    <button class="icon delx" data-id="${x.id}">Delete</button>
-  </div>`
-}).join(''):'<div class="empty">No money records yet. Add your first transaction above 💰</div>';
-document.querySelectorAll('.delx').forEach(b=>b.onclick=()=>deleteRow('expenses',b.dataset.id))
+let dailyExpenseChartInstance=null, categoryExpenseChartInstance=null;
+function selectedExpenseMonth(){
+  const input=$('expenseMonth');
+  return input&&input.value ? input.value : now().slice(0,7);
 }
-$('ax').onclick=async()=>{let n=$('xn').value.trim(),a=Number($('xa').value);if(!n||!a)return;await addRow('expenses',{name:n,category:($('xc').value.trim()||'Household'),amount:a,expense_date:$('xd').value,transaction_type:$('xkind').value,note:$('xnote').value.trim()});['xn','xc','xa','xnote'].forEach(x=>$(x).value='');$('xkind').value='Money Out';$('xd').value=now()};
+function houseExpenses(){
+  return D.expenses.filter(x=>!String(x.category||'').toLowerCase().startsWith('mandir'));
+}
+function monthExpenseData(month){
+  const all=houseExpenses();
+  const entries=all.filter(x=>String(x.expense_date||'').slice(0,7)===month);
+  const before=all.filter(x=>String(x.expense_date||'')<month+'-01');
+  const netBefore=before.reduce((sum,x)=>sum+((x.transaction_type||'Money Out')==='Money In'?1:-1)*Number(x.amount||0),0);
+  const monthOpeningEntries=entries.filter(x=>(x.transaction_type||'Money Out')==='Money In'&&String(x.category||'').trim().toLowerCase()==='opening balance');
+  const opening=netBefore+monthOpeningEntries.reduce((sum,x)=>sum+Number(x.amount||0),0);
+  const income=entries.filter(x=>(x.transaction_type||'Money Out')==='Money In'&&String(x.category||'').trim().toLowerCase()!=='opening balance').reduce((sum,x)=>sum+Number(x.amount||0),0);
+  const spent=entries.filter(x=>(x.transaction_type||'Money Out')!=='Money In').reduce((sum,x)=>sum+Number(x.amount||0),0);
+  const daily={};
+  const categories={};
+  entries.filter(x=>(x.transaction_type||'Money Out')!=='Money In').forEach(x=>{
+    const date=x.expense_date||month+'-01';
+    daily[date]=(daily[date]||0)+Number(x.amount||0);
+    const category=x.category||'General';
+    categories[category]=(categories[category]||0)+Number(x.amount||0);
+  });
+  return {all,entries,opening,income,spent,closing:netBefore+income-spent,daily,categories};
+}
+function renderExpenseReport(){
+  const month=selectedExpenseMonth(), data=monthExpenseData(month);
+  $('monthOpening').textContent=money(data.opening);
+  $('monthIncome').textContent=money(data.income);
+  $('monthSpent').textContent=money(data.spent);
+  $('monthClosing').textContent=money(data.closing);
+  const monthEntries=[...data.entries].sort((a,b)=>String(a.expense_date||'').localeCompare(String(b.expense_date||'')));
+  $('monthExpenseCount').textContent=monthEntries.length+' entries';
+  $('monthExpenseDetails').innerHTML=monthEntries.length?`<table class="expense-detail-table"><thead><tr><th>Date</th><th>Where / Description</th><th>Category</th><th>Type</th><th>Amount</th></tr></thead><tbody>${monthEntries.map(x=>{const incoming=(x.transaction_type||'Money Out')==='Money In';return `<tr><td>${esc(nice(x.expense_date))}</td><td>${esc(x.name||'—')}${x.note?`<div class="transaction-note">${esc(x.note)}</div>`:''}</td><td>${esc(x.category||'General')}</td><td>${incoming?'Received':'Spent'}</td><td style="white-space:nowrap;font-weight:700">${incoming?'+':'−'}${money(x.amount)}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">No transactions recorded for this month yet.</div>';
+  const dailyLabels=Object.keys(data.daily).sort();
+  const dailyValues=dailyLabels.map(d=>data.daily[d]);
+  const dailyCanvas=$('dailyExpenseChart');
+  if(dailyExpenseChartInstance)dailyExpenseChartInstance.destroy();
+  if(dailyCanvas&&window.Chart){
+    dailyExpenseChartInstance=new Chart(dailyCanvas,{type:'bar',data:{labels:dailyLabels.map(d=>new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short'})),datasets:[{label:'Amount spent (₹)',data:dailyValues,backgroundColor:'#5b6ee1',borderRadius:5,maxBarThickness:34}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Spent: '+money(c.raw)}}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'₹'+Number(v).toLocaleString('en-IN')}},x:{grid:{display:false}}}}});
+  }
+  const categoryLabels=Object.keys(data.categories).sort((a,b)=>data.categories[b]-data.categories[a]);
+  if(categoryExpenseChartInstance)categoryExpenseChartInstance.destroy();
+  const categoryCanvas=$('categoryExpenseChart');
+  if(categoryCanvas&&window.Chart){
+    categoryExpenseChartInstance=new Chart(categoryCanvas,{type:'bar',data:{labels:categoryLabels,datasets:[{label:'Spent (₹)',data:categoryLabels.map(c=>data.categories[c]),backgroundColor:'#22a06b',borderRadius:5}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>money(c.raw)}}},scales:{x:{beginAtZero:true,ticks:{callback:v=>'₹'+Number(v).toLocaleString('en-IN')}},y:{grid:{display:false}}}}});
+  }
+  const top=categoryLabels[0];
+  $('topExpenseCategory').textContent=top?`Highest spending category: ${top} (${money(data.categories[top])})`:'No spending categories recorded this month.';
+}
+function renderX(){
+  const house=houseExpenses();
+  let income=house.filter(x=>(x.transaction_type||'Money Out')==='Money In').reduce((s,x)=>s+Number(x.amount||0),0);
+  let outflow=house.filter(x=>(x.transaction_type||'Money Out')==='Money Out').reduce((s,x)=>s+Number(x.amount||0),0);
+  $('xin').textContent=money(income); $('xout').textContent=money(outflow); $('xbal').textContent=money(income-outflow); $('xcount').textContent=house.length;
+  let a=[...house].sort((x,y)=>String(y.expense_date||'').localeCompare(String(x.expense_date||'')));
+  $('xl').innerHTML=a.length?a.map(x=>{
+    let kind=x.transaction_type||'Money Out', incoming=kind==='Money In';
+    return `<div class="transaction"><div><div class="transaction-title">${esc(x.name)}</div><div class="transaction-meta">${esc(x.category||'General')} • ${nice(x.expense_date)}</div>${x.note?`<div class="transaction-note">${esc(x.note)}</div>`:''}</div><div><span class="badge">${kind}</span></div><div class="${incoming?'in-money':'out-money'}">${incoming?'+':'−'}${money(x.amount)}</div><div>${incoming?'Received':'Spent'}</div><button class="icon delx" data-id="${x.id}">Delete</button></div>`;
+  }).join(''):'<div class="empty">No money records yet. Add your first transaction above 💰</div>';
+  document.querySelectorAll('.delx').forEach(b=>b.onclick=()=>deleteRow('expenses',b.dataset.id));
+  renderExpenseReport();
+}
+$('expenseMonth').value=now().slice(0,7);
+$('expenseMonth').addEventListener('change',renderExpenseReport);
+$('downloadExpensePdf').onclick=()=>{
+  if(!window.jspdf||!window.jspdf.jsPDF){alert('PDF library did not load. Please check your internet connection and try again.');return;}
+  const month=selectedExpenseMonth(), data=monthExpenseData(month), {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const monthLabel=new Date(month+'-01T00:00:00').toLocaleDateString('en-IN',{month:'long',year:'numeric'});
+  doc.setFontSize(18);doc.text('PA Control Center - Monthly Expense Report',14,16);
+  doc.setFontSize(12);doc.text(monthLabel,14,24);
+  doc.setFontSize(10);
+  doc.text('Opening balance: '+money(data.opening),14,33);
+  doc.text('Money received: '+money(data.income),88,33);
+  doc.text('Total spent: '+money(data.spent),162,33);
+  doc.text('Closing balance: '+money(data.closing),236,33);
+  let y=41;
+  const canvas=$('dailyExpenseChart');
+  if(canvas&&canvas.width){
+    const img=canvas.toDataURL('image/png',1);
+    doc.addImage(img,'PNG',14,y,170,78);
+  }
+  const catCanvas=$('categoryExpenseChart');
+  if(catCanvas&&catCanvas.width){
+    const img=catCanvas.toDataURL('image/png',1);
+    doc.addImage(img,'PNG',190,y,90,78);
+  }
+  y=126;
+  doc.setFontSize(13);doc.text('Transaction details',14,y);y+=7;
+  doc.setFontSize(8);
+  const rows=[['Date','Description','Category','Type','Amount']];
+  [...data.entries].sort((a,b)=>String(a.expense_date||'').localeCompare(String(b.expense_date||''))).forEach(x=>{
+    rows.push([nice(x.expense_date),String(x.name||'').slice(0,42),String(x.category||'General').slice(0,28),(x.transaction_type||'Money Out'),money(x.amount)]);
+  });
+  const widths=[32,83,48,35,32], xPositions=[14,46,129,177,212];
+  rows.forEach((row,i)=>{
+    if(y>190){doc.addPage();y=16;}
+    if(i===0){doc.setFillColor(240,242,246);doc.rect(14,y-4,245,7,'F');doc.setFont(undefined,'bold');}
+    else doc.setFont(undefined,'normal');
+    row.forEach((cell,j)=>doc.text(String(cell),xPositions[j],y,{maxWidth:widths[j]}));
+    y+=7;
+  });
+  doc.save('PA-Expense-Report-'+month+'.pdf');
+};
+$('ax').onclick=async()=>{
+  let n=$('xn').value.trim(),a=Number($('xa').value);
+  if(!n){alert('Please enter a description.');$('xn').focus();return;}
+  if(!Number.isFinite(a)||a<=0){alert('Please enter an amount greater than zero.');$('xa').focus();return;}
+  await addRow('expenses',{name:n,category:($('xc').value.trim()||'Household'),amount:a,expense_date:$('xd').value||now(),transaction_type:$('xkind').value,note:$('xnote').value.trim()});
+  ['xn','xc','xa','xnote'].forEach(x=>$(x).value='');$('xkind').value='Money Out';$('xd').value=now();
+};
 
 function renderMandir(){
   if(!$('min')||!$('mout')||!$('mbal')||!$('mcount')||!$('ml')) return;
